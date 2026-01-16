@@ -1,0 +1,52 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  line-height: 1.5;
+}
+
+button {
+  margin: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  display: block;
+  margin: 10px 0;
+  padding: 5px;
+}
+
+.meeting-item {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.meeting-item:hover {
+  background-color: #f0f0f0;
+}
+
+.active-meeting {
+  background-color: #e0e0f0;
+  border-color: blue;
+}
+
+.tabs {
+  margin: 20px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-content {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-top: none;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: #f9f9f9;
+  padding: 10px;
+}

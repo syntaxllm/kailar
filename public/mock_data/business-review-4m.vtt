@@ -1,0 +1,190 @@
+WEBVTT
+
+00:00:01.230 --> 00:00:03.890
+<v Emily Watson>Hi everyone, thanks for joining the Q1 Business Review.</v>
+
+00:00:04.560 --> 00:00:07.340
+<v Emily Watson>Today we'll cover performance metrics, customer feedback, and strategic initiatives.</v>
+
+00:00:08.120 --> 00:00:11.670
+<v David Kim>Let me start with the revenue numbers. We hit 127% of our Q1 target.</v>
+
+00:00:12.450 --> 00:00:15.890
+<v David Kim>ARR grew from $2.3M to $3.1M, driven primarily by enterprise upsells.</v>
+
+00:00:16.780 --> 00:00:19.560
+<v David Kim>Our Net Revenue Retention is at 134%, which is best-in-class for our segment.</v>
+
+00:00:20.450 --> 00:00:23.340
+<v Rachel Torres>That's impressive growth. How's customer satisfaction tracking?</v>
+
+00:00:24.230 --> 00:00:27.120
+<v David Kim>NPS score improved from 42 to 58 this quarter.</v>
+
+00:00:27.890 --> 00:00:31.450
+<v David Kim>The AI-powered features we launched in February got overwhelmingly positive feedback.</v>
+
+00:00:32.340 --> 00:00:35.120
+<v Emily Watson>Excellent. Rachel, can you walk us through the product roadmap?</v>
+
+00:00:36.120 --> 00:00:39.670
+<v Rachel Torres>Sure. Our top priority for Q2 is the advanced analytics dashboard.</v>
+
+00:00:40.560 --> 00:00:44.230
+<v Rachel Torres>We're hearing from enterprise customers that they need better insights into usage patterns.</v>
+
+00:00:45.120 --> 00:00:48.450
+<v Rachel Torres>We're building custom reports, data exports, and API access for integration.</v>
+
+00:00:49.340 --> 00:00:52.120
+<v Marcus Chen>On the engineering side, we're also investing in performance.</v>
+
+00:00:52.890 --> 00:00:56.340
+<v Marcus Chen>Goal is to reduce page load times by 50% and API response times by 30%.</v>
+
+00:00:57.230 --> 00:01:00.120
+<v Marcus Chen>We're migrating to edge computing and implementing aggressive caching.</v>
+
+00:01:01.120 --> 00:01:03.780
+<v Emily Watson>How's the infrastructure cost looking with these changes?</v>
+
+00:01:04.670 --> 00:01:07.560
+<v Marcus Chen>Actually decreasing. Moving to edge reduces our cloud spend.</v>
+
+00:01:08.450 --> 00:01:11.890
+<v Marcus Chen>We're projecting 25% cost reduction while improving performance. Win-win.</v>
+
+00:01:12.890 --> 00:01:15.560
+<v David Kim>That's crucial because we're planning aggressive hiring in Q2.</v>
+
+00:01:16.450 --> 00:01:19.340
+<v David Kim>We need to scale the team to support our growth trajectory.</v>
+
+00:01:20.340 --> 00:01:23.120
+<v Emily Watson>Let's talk about the competitive landscape. Any concerns?</v>
+
+00:01:24.120 --> 00:01:27.670
+<v Rachel Torres>Our main competitor launched a similar AI feature last week.</v>
+
+00:01:28.560 --> 00:01:31.450
+<v Rachel Torres>But from what I've seen, ours is significantly more accurate and user-friendly.</v>
+
+00:01:32.450 --> 00:01:35.340
+<v Rachel Torres>We have first-mover advantage and better execution.</v>
+
+00:01:36.340 --> 00:01:39.120
+<v Marcus Chen>We also have deeper integrations with enterprise tools.</v>
+
+00:01:40.120 --> 00:01:43.450
+<v Marcus Chen>Salesforce, Teams, Slack - our ecosystem is more comprehensive.</v>
+
+00:01:44.560 --> 00:01:47.230
+<v Emily Watson>Good. What are the biggest risks we're facing for Q2?</v>
+
+00:01:48.340 --> 00:01:51.120
+<v David Kim>Churn risk with our mid-market segment.</v>
+
+00:01:52.120 --> 00:01:55.450
+<v David Kim>We've seen a couple of downgrades due to budget constraints in the current economy.</v>
+
+00:01:56.560 --> 00:01:59.340
+<v David Kim>We need to be proactive with customer success outreach.</v>
+
+00:02:00.450 --> 00:02:03.230
+<v Rachel Torres>Action item: I'll work with CS to create a health score system.</v>
+
+00:02:04.230 --> 00:02:07.120
+<v Rachel Torres>Flag at-risk accounts early so we can intervene before they churn.</v>
+
+00:02:08.230 --> 00:02:10.890
+<v Marcus Chen>From an engineering perspective, technical debt is accumulating.</v>
+
+00:02:11.890 --> 00:02:14.670
+<v Marcus Chen>We've been shipping fast. Need to allocate 20% of sprint capacity to refactoring.</v>
+
+00:02:15.780 --> 00:02:18.340
+<v Emily Watson>Agreed. Let's not compromise long-term velocity for short-term wins.</v>
+
+00:02:19.450 --> 00:02:22.120
+<v Emily Watson>Okay, strategic initiatives for Q2. Top three priorities?</v>
+
+00:02:23.340 --> 00:02:25.890
+<v David Kim>One: Launch in European market. GDPR compliance is ready.</v>
+
+00:02:26.890 --> 00:02:29.560
+<v Rachel Torres>Two: Ship the enterprise tier with advanced security features.</v>
+
+00:02:30.670 --> 00:02:33.230
+<v Marcus Chen>Three: Build out the developer platform and API marketplace.</v>
+
+00:02:34.450 --> 00:02:37.120
+<v Emily Watson>Perfect. Timeline on each?</v>
+
+00:02:38.230 --> 00:02:40.670
+<v David Kim>Europe launch: May 15th.</v>
+
+00:02:41.670 --> 00:02:44.120
+<v Rachel Torres>Enterprise tier: June 1st.</v>
+
+00:02:45.120 --> 00:02:47.560
+<v Marcus Chen>Developer platform: July beta, August GA.</v>
+
+00:02:48.780 --> 00:02:51.340
+<v Emily Watson>Everyone clear on dependencies and ownership?</v>
+
+00:02:52.560 --> 00:02:54.890
+<v David Kim>Yes, I'll own the go-to-market for Europe.</v>
+
+00:02:55.890 --> 00:02:58.120
+<v Rachel Torres>I've got product and design for enterprise tier.</v>
+
+00:02:59.120 --> 00:03:01.340
+<v Marcus Chen>And I'll lead the developer platform initiative.</v>
+
+00:03:02.560 --> 00:03:05.230
+<v Emily Watson>Excellent. Last topic - team morale and culture.</v>
+
+00:03:06.340 --> 00:03:09.120
+<v Emily Watson>How are people feeling with the increased pace?</v>
+
+00:03:10.230 --> 00:03:12.890
+<v Marcus Chen>Engineering team is energized but we need to watch for burnout.</v>
+
+00:03:13.890 --> 00:03:16.560
+<v Marcus Chen>I'm implementing no-meeting Wednesdays for deep work time.</v>
+
+00:03:17.670 --> 00:03:20.120
+<v Rachel Torres>Product team is excited about the customer impact we're having.</v>
+
+00:03:21.120 --> 00:03:23.560
+<v Rachel Torres>Seeing positive reviews and testimonials is incredibly motivating.</v>
+
+00:03:24.780 --> 00:03:27.230
+<v David Kim>Sales is crushing it. Pipeline is healthy.</v>
+
+00:03:28.230 --> 00:03:30.670
+<v David Kim>We're hiring two more AEs to handle the inbound volume.</v>
+
+00:03:31.890 --> 00:03:34.340
+<v Emily Watson>Great energy across the board. Keep it up, team.</v>
+
+00:03:35.560 --> 00:03:38.120
+<v Emily Watson>Final action items before we close?</v>
+
+00:03:39.340 --> 00:03:42.120
+<v Rachel Torres>I'll send out the Q2 product roadmap doc by end of week.</v>
+
+00:03:43.230 --> 00:03:45.670
+<v Marcus Chen>I'll share the technical architecture plan for developer platform.</v>
+
+00:03:46.780 --> 00:03:49.120
+<v David Kim>And I'll circulate the Europe launch timeline with all stakeholders.</v>
+
+00:03:50.340 --> 00:03:52.670
+<v Emily Watson>Perfect. Thanks everyone for a productive review.</v>
+
+00:03:53.890 --> 00:03:55.780
+<v Emily Watson>Let's make Q2 even better than Q1!</v>
+
+00:03:56.890 --> 00:03:58.120
+<v All>Thanks! / Let's do it! / Excited!</v>

@@ -1,0 +1,40 @@
+# Node/npm
+node_modules/
+.next/
+# Local mock DB and generated data
+data/
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# Logs
+npm-debug.log
+*.log
+
+# Editor folders
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Coverage
+coverage/
+
+# Documentation and markdown files (keep only README.md)
+docs/
+*.md
+!README.md
+
+# Mock data
+mock_data/*.vtt
+
+# Databases
+*.sqlite
+*.db
+
+# Others
+.npm/
+!push-doc/*.txt

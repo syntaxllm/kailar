@@ -1,0 +1,16 @@
+WEBVTT
+
+00:00:00.000 --> 00:10:00.000
+DevLead: Today we'll triage the bug list and reproduce critical issues.
+
+00:10:00.000 --> 00:30:00.000
+Engineer1: Found a stack trace pointing to the logging module; will investigate.
+
+00:30:00.000 --> 01:00:00.000
+Engineer2: Reproduced the memory leak; adding instrumentation.
+
+01:00:00.000 --> 01:30:00.000
+DevLead: Plan for hotfix branch and release candidate testing.
+
+01:30:00.000 --> 02:00:00.000
+Engineer1: Will push a PR with a patch; need code review.

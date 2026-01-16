@@ -1,0 +1,29 @@
+{
+  "name": "meetingai",
+  "version": "1.0.0",
+  "description": "Next.js web app for Teams meeting transcript processing and search",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 5656",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^3.8.5",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.0.0",
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

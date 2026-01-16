@@ -1,0 +1,241 @@
+WEBVTT
+
+00:00:02.340 --> 00:00:05.120
+<v Sarah Chen>Good morning everyone! Thanks for joining the Sprint Planning session.</v>
+
+00:00:05.340 --> 00:00:09.560
+<v Sarah Chen>Let's start by reviewing what we accomplished last sprint and plan for the next two weeks.</v>
+
+00:00:10.120 --> 00:00:13.840
+<v Michael Rodriguez>Sure, I can kick us off. We completed the authentication refactor.</v>
+
+00:00:14.120 --> 00:00:18.890
+<v Michael Rodriguez>The new JWT implementation is live in production and we've seen a 40% reduction in auth-related errors.</v>
+
+00:00:19.340 --> 00:00:22.760
+<v Priya Sharma>That's great progress! On my end, the database migration to MongoDB Atlas is complete.</v>
+
+00:00:23.120 --> 00:00:27.450
+<v Priya Sharma>We're now running on the new cluster and performance metrics show 3x faster query times.</v>
+
+00:00:28.120 --> 00:00:31.230
+<v James Wilson>Excellent work team. I've been working on the recording upload feature.</v>
+
+00:00:31.560 --> 00:00:35.780
+<v James Wilson>The MVP is ready for testing - supports MP4, WebM, and audio-only formats up to 2GB.</v>
+
+00:00:36.340 --> 00:00:39.120
+<v Sarah Chen>Perfect timing. Let's discuss priorities for Sprint 12.</v>
+
+00:00:39.890 --> 00:00:43.670
+<v Sarah Chen>Our main focus should be the AI integration - specifically the summarization service.</v>
+
+00:00:44.230 --> 00:00:47.560
+<v Michael Rodriguez>I can take the lead on that. We'll use Gemini for generating summaries.</v>
+
+00:00:48.120 --> 00:00:52.340
+<v Michael Rodriguez>The plan is to analyze chunks and extract key discussion points, decisions, and action items.</v>
+
+00:00:53.120 --> 00:00:56.780
+<v Priya Sharma>Should we also implement the chat interface where users can ask questions about meetings?</v>
+
+00:00:57.230 --> 00:01:00.890
+<v Priya Sharma>Like a RAG system where they can query "What did we decide about the API redesign?"</v>
+
+00:01:01.450 --> 00:01:04.120
+<v Sarah Chen>Absolutely, that's a key feature for our Q1 roadmap.</v>
+
+00:01:04.670 --> 00:01:08.340
+<v Sarah Chen>James, can you pair with Michael on the chat implementation while Priya handles action item extraction?</v>
+
+00:01:09.120 --> 00:01:11.890
+<v James Wilson>Sounds good. I'll work on the frontend chat interface.</v>
+
+00:01:12.340 --> 00:01:15.560
+<v James Wilson>We should use a conversational UI with message history and context preservation.</v>
+
+00:01:16.230 --> 00:01:19.450
+<v Priya Sharma>For action items, I'm thinking we use NLP to identify tasks.</v>
+
+00:01:20.120 --> 00:01:24.670
+<v Priya Sharma>Look for phrases like "need to", "should implement", "action item", "follow up on", etc.</v>
+
+00:01:25.340 --> 00:01:28.120
+<v Michael Rodriguez>We can also extract deadlines when they're mentioned.</v>
+
+00:01:28.780 --> 00:01:32.450
+<v Michael Rodriguez>The LLM should be able to parse "by Friday" or "before the next sprint" contextually.</v>
+
+00:01:33.120 --> 00:01:36.890
+<v Sarah Chen>Great ideas. What about the recording upload flow? How should that work?</v>
+
+00:01:37.560 --> 00:01:41.230
+<v James Wilson>Users drag and drop a recording file. We'll extract audio if it's video.</v>
+
+00:01:41.890 --> 00:01:45.450
+<v James Wilson>Then send to a transcription service - maybe use Gemini's speech-to-text capabilities.</v>
+
+00:01:46.120 --> 00:01:49.340
+<v Priya Sharma>Or we could support VTT upload directly for MS Teams exports.</v>
+
+00:01:49.890 --> 00:01:53.560
+<v Priya Sharma>That way users who already have transcripts don't need to re-process recordings.</v>
+
+00:01:54.230 --> 00:01:56.780
+<v Sarah Chen>Good point. Let's support both workflows.</v>
+
+00:01:57.450 --> 00:02:01.120
+<v Sarah Chen>Upload raw recording OR upload VTT transcript directly. Maximum flexibility.</v>
+
+00:02:02.340 --> 00:02:05.890
+<v Michael Rodriguez>For the summary generation, what level of detail should we aim for?</v>
+
+00:02:06.560 --> 00:02:10.230
+<v Michael Rodriguez>Should it be a brief executive summary or more detailed section-by-section breakdown?</v>
+
+00:02:11.120 --> 00:02:14.670
+<v Sarah Chen>Let's provide both. A 3-sentence executive summary at the top.</v>
+
+00:02:15.340 --> 00:02:19.450
+<v Sarah Chen>Then a structured breakdown with key topics, decisions made, and action items assigned.</v>
+
+00:02:20.230 --> 00:02:23.890
+<v Priya Sharma>Should we also identify the speakers and their main contributions?</v>
+
+00:02:24.560 --> 00:02:27.120
+<v Priya Sharma>Like "Sarah led the discussion, Michael proposed X, Priya raised concerns about Y"?</v>
+
+00:02:27.780 --> 00:02:30.340
+<v Sarah Chen>Yes! That would be incredibly useful for people who missed the meeting.</v>
+
+00:02:31.120 --> 00:02:34.450
+<v James Wilson>One concern - what about privacy? Should we allow meeting hosts to disable AI features?</v>
+
+00:02:35.230 --> 00:02:38.890
+<v Sarah Chen>Good callout. Let's add a toggle in settings to opt-in or opt-out of AI processing.</v>
+
+00:02:39.560 --> 00:02:42.340
+<v Sarah Chen>Default should be opt-in with clear disclosure about what data is sent to the LLM.</v>
+
+00:02:43.120 --> 00:02:46.450
+<v Michael Rodriguez>We should also implement rate limiting on the API to prevent abuse.</v>
+
+00:02:47.230 --> 00:02:50.780
+<v Michael Rodriguez>Maybe 50 queries per hour per user for the chat feature, unlimited for summaries.</v>
+
+00:02:51.560 --> 00:02:54.120
+<v Priya Sharma>Makes sense. We don't want runaway costs on the Gemini API.</v>
+
+00:02:55.120 --> 00:02:58.670
+<v Sarah Chen>Alright, let's lock in our stories for Sprint 12. I'll create the tickets.</v>
+
+00:02:59.340 --> 00:03:02.890
+<v Sarah Chen>Story 1: Implement meeting summary generation with executive and detailed views.</v>
+
+00:03:03.560 --> 00:03:06.120
+<v Sarah Chen>Story 2: Build action item extraction with assignee detection.</v>
+
+00:03:06.890 --> 00:03:09.450
+<v Sarah Chen>Story 3: Create chat interface for querying meeting content.</v>
+
+00:03:10.230 --> 00:03:12.780
+<v Sarah Chen>Story 4: Add recording file upload with format support.</v>
+
+00:03:13.560 --> 00:03:16.120
+<v Sarah Chen>Story 5: Implement privacy controls and rate limiting.</v>
+
+00:03:17.120 --> 00:03:19.670
+<v James Wilson>I'll also add error handling and loading states to the UI.</v>
+
+00:03:20.340 --> 00:03:23.450
+<v James Wilson>Nothing worse than a spinner that never resolves or an error with no message.</v>
+
+00:03:24.230 --> 00:03:27.120
+<v Priya Sharma>I can write comprehensive unit tests for the LLM service layer.</v>
+
+00:03:27.890 --> 00:03:31.560
+<v Priya Sharma>We should mock the Gemini responses so we're not burning API credits in CI/CD.</v>
+
+00:03:32.340 --> 00:03:35.120
+<v Michael Rodriguez>Good idea. I'll set up integration tests for the full flow.</v>
+
+00:03:35.890 --> 00:03:39.450
+<v Michael Rodriguez>Upload a test VTT, verify chunks are created, test chat responses, validate summaries.</v>
+
+00:03:40.340 --> 00:03:43.120
+<v Sarah Chen>Perfect. Timeline - can we ship this in two weeks?</v>
+
+00:03:43.890 --> 00:03:46.670
+<v James Wilson>If we parallelize work and avoid blockers, yes.</v>
+
+00:03:47.340 --> 00:03:50.120
+<v Priya Sharma>I'll need the chunk data structure finalized by end of day Monday.</v>
+
+00:03:50.890 --> 00:03:53.560
+<v Michael Rodriguez>I can have that ready. It's mostly already defined.</v>
+
+00:03:54.340 --> 00:03:57.450
+<v Sarah Chen>Excellent. Let's sync daily at 9 AM to catch any blockers early.</v>
+
+00:03:58.230 --> 00:04:01.120
+<v Sarah Chen>And we'll do a demo on Friday for stakeholders to show progress.</v>
+
+00:04:02.120 --> 00:04:04.670
+<v James Wilson>Before we wrap - any dependencies or risks?</v>
+
+00:04:05.450 --> 00:04:08.890
+<v Priya Sharma>Main risk is Gemini API rate limits. We should monitor usage closely.</v>
+
+00:04:09.670 --> 00:04:12.780
+<v Michael Rodriguez>Also, what if transcripts are really long? Like 3-hour meetings?</v>
+
+00:04:13.560 --> 00:04:16.890
+<v Michael Rodriguez>We might hit token limits. Need a strategy to handle chunking for LLM context.</v>
+
+00:04:17.670 --> 00:04:20.340
+<v Sarah Chen>Good point. Let's use a sliding window approach.</v>
+
+00:04:21.120 --> 00:04:24.560
+<v Sarah Chen>Process in batches, then combine summaries. Like map-reduce for transcripts.</v>
+
+00:04:25.340 --> 00:04:27.890
+<v Priya Sharma>That would work. Summarize chunks, then summarize the summaries.</v>
+
+00:04:28.670 --> 00:04:31.120
+<v James Wilson>Anything else before we close out?</v>
+
+00:04:32.120 --> 00:04:34.450
+<v Sarah Chen>Just one more thing - let's make the UI beautiful.</v>
+
+00:04:35.230 --> 00:04:38.780
+<v Sarah Chen>Not just functional. Gradients, smooth animations, premium feel.</v>
+
+00:04:39.560 --> 00:04:42.340
+<v Sarah Chen>This is a product we want to showcase in our portfolio.</v>
+
+00:04:43.230 --> 00:04:45.670
+<v James Wilson>I'm on it. Using modern design principles.</v>
+
+00:04:46.450 --> 00:04:49.340
+<v James Wilson>Dark mode by default, ambient gradients, glassmorphism effects.</v>
+
+00:04:50.230 --> 00:04:52.450
+<v Priya Sharma>Sounds great. I'm excited to see this come together.</v>
+
+00:04:53.340 --> 00:04:55.670
+<v Michael Rodriguez>Same here. This is going to be a solid feature set.</v>
+
+00:04:56.560 --> 00:04:59.120
+<v Sarah Chen>Awesome energy, team! Let's execute and ship this.</v>
+
+00:05:00.120 --> 00:05:02.340
+<v Sarah Chen>Meeting adjourned. See you all at standup tomorrow.</v>
+
+00:05:03.230 --> 00:05:04.890
+<v James Wilson>Thanks everyone!</v>
+
+00:05:05.670 --> 00:05:06.780
+<v Priya Sharma>See you tomorrow!</v>
+
+00:05:07.560 --> 00:05:08.670
+<v Michael Rodriguez>Bye team!</v>

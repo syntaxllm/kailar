@@ -1,0 +1,19 @@
+WEBVTT
+
+00:00:00.000 --> 00:03:00.000
+Host: Welcome to the release review. We'll go through slides and call out risks.
+
+00:03:00.000 --> 00:10:00.000
+Alice: Slide 5 shows the deployment plan; we're on schedule but need approvals.
+
+00:10:00.000 --> 00:25:00.000
+Sam: Backend migration details and rollback plan are in the doc. We need a small maintenance window.
+
+00:25:00.000 --> 00:40:00.000
+Priya: Frontend readiness and accessibility fixes mostly done; a few minor bugs remain.
+
+00:40:00.000 --> 00:50:00.000
+Liam: Analytics reconciliation will run after the migration; expect results in 48 hours.
+
+00:50:00.000 --> 01:00:00.000
+Host: Action items recap and owners. Thanks everyone.
