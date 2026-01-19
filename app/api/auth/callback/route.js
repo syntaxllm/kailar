@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getTokenFromCode } from '../../../lib/auth.js';
+import { getTokenFromCode } from '../../../../lib/auth.js';
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);

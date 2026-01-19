@@ -241,14 +241,24 @@ taskkill /PID <PID_NUMBER> /F
 
 ---
 
+## 🏗️ Simplified Production Architecture
+
+To ensure maximum reliability and cost-efficiency for initial testing, the application uses a **Simplified RAG Pipeline**:
+
+1.  **Ingestion**: Real-time meeting transcripts are pulled from Microsoft Graph.
+2.  **Storage**: Transcripts and 90-second chunks are stored in **MongoDB Atlas**.
+3.  **Retrieval (RAG)**: Uses a robust **Keyword-based Search** over the Atlas collections to identify relevant context.
+4.  **Generation**: Uses **Groq (Llama 3.3 70B)** to synthesize answers based only on the retrieved meeting context.
+5.  **Media**: Integrated video player for Microsoft Teams recordings.
+
+---
+
 ## 📊 Sample Meetings
 
 Included VTT files:
 1. **Sprint Planning** (5m) - Technical discussion about AI features
 2. **Business Review** (4m) - Quarterly metrics and strategic planning
 3. **Standup** (30s) - Quick team sync
-
-All samples use realistic MS Teams WebVTT format with proper speaker tags.
 
 ---
 
