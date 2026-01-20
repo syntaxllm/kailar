@@ -1,52 +1,513 @@
+:root {
+  /* Light Theme (Teams Default) */
+  --teams-purple: #6264A7;
+  --teams-purple-dark: #464775;
+  --teams-bg: #F5F5F5;
+  /* Light gray background */
+  --teams-panel-bg: #FFFFFF;
+  --text-primary: #242424;
+  --text-secondary: #616161;
+  --border-subtle: #E1DFDD;
+  --border-focus: #6264A7;
+  --hover-gray: #F0F0F0;
+  --accent-blue: #0078D4;
+  --chat-user-bg: #E8EBFA;
+  --chat-assistant-bg: #FFFFFF;
+}
+
+[data-theme='dark'] {
+  /* Dark Theme - Only White/Black Inversion */
+
+  /* Brand colors stay EXACTLY the same */
+  --teams-purple: #6264A7;
+  --teams-purple-dark: #464775;
+  --accent-blue: #0078D4;
+
+  /* Backgrounds: White becomes Dark Gray/Black */
+  --teams-bg: #1F1F1F;
+  /* Main background */
+  --teams-panel-bg: #2D2D2D;
+  /* Card/Sidebar background */
+
+  /* Text: Black becomes White */
+  --text-primary: #FFFFFF;
+  --text-secondary: #E0E0E0;
+
+  /* Borders: Gray becomes Dark Gray */
+  --border-subtle: #3D3D3D;
+  --border-focus: #6264A7;
+
+  /* Hover states */
+  --hover-gray: #333333;
+
+  /* Chat Bubbles */
+  --chat-user-bg: #3B3B50;
+  /* Slightly purple-tinted dark gray for user */
+  --chat-assistant-bg: #2D2D2D;
+  /* Matches panel bg */
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: sans-serif;
-  margin: 20px;
-  line-height: 1.5;
+  font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--teams-bg);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  font-size: 14px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-button {
-  margin: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 10px 0;
+  font-weight: 600;
 }
 
-input,
-textarea {
-  display: block;
-  margin: 10px 0;
-  padding: 5px;
+a {
+  color: var(--teams-purple);
+  text-decoration: none;
+}
+
+/* Layout Container */
+.app-container {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+}
+
+.app-header {
+  background-color: var(--teams-purple-dark);
+  color: white;
+  padding: 0 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.app-brand {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-status {
+  font-size: 12px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background-color: var(--teams-panel-bg);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebar-section {
+  padding: 8px 0;
+}
+
+.sidebar-title {
+  padding: 0 16px 8px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.meeting-list {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .meeting-item {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 10px 16px;
   cursor: pointer;
+  border-left: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .meeting-item:hover {
-  background-color: #f0f0f0;
+  background-color: var(--hover-gray);
 }
 
-.active-meeting {
-  background-color: #e0e0f0;
-  border-color: blue;
+.meeting-item.active {
+  background-color: var(--teams-panel-bg);
+  /* Use panel bg or specialized active color if needed */
+  border-left-color: var(--teams-purple);
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Specific overwrite for active item to stand out in dark mode properly */
+[data-theme='dark'] .meeting-item.active {
+  background-color: #333;
+}
+
+[data-theme='light'] .meeting-item.active {
+  background-color: #fff;
+}
+
+.meeting-item-title {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.meeting-item-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Content Area */
+.content-stage {
+  flex: 1;
+  background-color: var(--teams-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.welcome-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+}
+
+.stage-header {
+  background-color: var(--teams-panel-bg);
+  padding: 20px 24px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.stage-title {
+  font-size: 20px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .tabs {
-  margin: 20px 0;
-  border-bottom: 1px solid #ccc;
+  display: flex;
+  gap: 20px;
 }
 
-.tab-content {
-  border: 1px solid #ccc;
-  padding: 15px;
-  border-top: none;
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  font-weight: 400;
 }
 
-pre {
-  white-space: pre-wrap;
+.tab-btn:hover {
+  color: var(--teams-purple);
+}
+
+.tab-btn.active {
+  color: var(--teams-purple);
+  border-bottom-color: var(--teams-purple);
+  font-weight: 600;
+}
+
+.stage-content {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Common UI Elements */
+.card {
+  background: var(--teams-panel-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.132), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.108);
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+button.primary {
+  background-color: var(--teams-purple);
+  color: white;
+  border: none;
+  padding: 6px 20px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background-color: var(--teams-purple-dark);
+}
+
+button.secondary {
+  background-color: var(--teams-panel-bg);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 6px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+button.secondary:hover {
+  background-color: var(--hover-gray);
+}
+
+input[type="text"],
+input[type="file"],
+textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 2px;
+  font-family: inherit;
+  background-color: var(--teams-panel-bg);
+  color: var(--text-primary);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--teams-purple);
+}
+
+/* Chat Specifics */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-history {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-message.assistant {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: 4px;
+  position: relative;
+  line-height: 1.5;
   word-wrap: break-word;
-  background: #f9f9f9;
-  padding: 10px;
+  /* Legacy support */
+  overflow-wrap: break-word;
+  /* Standard property */
+  word-break: break-word;
+  /* Ensure long words break */
+  white-space: pre-wrap;
+  /* Preserve newlines but wrap text */
+  max-width: 100%;
+  /* Ensure it doesn't exceed parent */
+}
+
+.user .message-bubble {
+  background-color: var(--chat-user-bg);
+  color: var(--text-primary);
+}
+
+.assistant .message-bubble {
+  background-color: var(--chat-assistant-bg);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.message-role {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.chat-input-area {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+.source-citation {
+  font-size: 11px;
+  background: var(--hover-gray);
+  padding: 4px 8px;
+  margin-top: 4px;
+  border-left: 2px solid var(--teams-purple);
+  color: var(--text-secondary);
+}
+
+/* Dark Mode Specific Overrides for Visibility */
+[data-theme='dark'] .meeting-item-title {
+  color: #fff;
+}
+
+[data-theme='dark'] .meeting-item-meta {
+  color: #a0a0a0;
+}
+
+[data-theme='dark'] .tab-btn {
+  color: #ccc;
+}
+
+[data-theme='dark'] .tab-btn:hover {
+  color: #fff;
+}
+
+[data-theme='dark'] .tab-btn.active {
+  color: #8B8CC7;
+  /* Lightened purple for active state visibility */
+  border-bottom-color: #8B8CC7;
+}
+
+[data-theme='dark'] h1,
+[data-theme='dark'] h2,
+[data-theme='dark'] h3,
+[data-theme='dark'] h4,
+[data-theme='dark'] h5,
+[data-theme='dark'] h6 {
+  color: #fff !important;
+}
+
+[data-theme='dark'] p,
+[data-theme='dark'] li,
+[data-theme='dark'] div {
+  color: inherit;
+}
+
+[data-theme='dark'] input::placeholder,
+[data-theme='dark'] textarea::placeholder {
+  color: #888;
+}
+
+/* Fix speaker names in transcript - they were hardcoded dark in inline styles in page.jsx, 
+   but we can try to override if they have a class or target broadly */
+[data-theme='dark'] .transcript-speaker {
+  color: #A6A7D9 !important;
+  /* Lighter purple */
+}
+
+
+/* Spinner */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--hover-gray);
+  border-top: 2px solid var(--teams-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Header Action Button (Theme Toggle) */
+.header-action-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 2px;
+  font-size: 16px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.header-action-btn:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.1);
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export default function MeetingAI() {
   const [meetings, setMeetings] = useState([]);
@@ -12,11 +12,22 @@ export default function MeetingAI() {
   const [status, setStatus] = useState('');
   const [realMeetings, setRealMeetings] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [theme, setTheme] = useState('light');
+  const chatEndRef = useRef(null);
 
   useEffect(() => {
     loadMeetings();
     checkLogin();
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
+
+  useEffect(() => {
+    if (view === 'chat' && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, view]);
 
   async function loadMeetings() {
     const res = await fetch('/api/transcripts');
@@ -24,12 +35,7 @@ export default function MeetingAI() {
     setMeetings(data || []);
   }
 
-  async function doImport() {
-    setStatus('Importing...');
-    await fetch('/api/import-mock', { method: 'POST' });
-    await loadMeetings();
-    setStatus('Imported samples.');
-  }
+
 
   function checkLogin() {
     const hasToken = document.cookie.includes('ms_token');
@@ -38,7 +44,7 @@ export default function MeetingAI() {
   }
 
   async function loadRealMeetings() {
-    setStatus('Loading recent meetings...');
+    setStatus('Syncing Teams meetings...');
     try {
       const res = await fetch('/api/teams/recent');
       if (res.ok) {
@@ -47,16 +53,16 @@ export default function MeetingAI() {
         setStatus('');
       } else {
         const err = await res.json();
-        setStatus('Failed to load Teams meetings: ' + (err.error || res.statusText));
+        setStatus('Sync failed: ' + (err.error || res.statusText));
       }
     } catch (e) {
       console.error(e);
-      setStatus('Network error loading meetings.');
+      setStatus('Network error syncing meetings.');
     }
   }
 
   async function ingestMeeting(teamsId) {
-    setStatus('Ingesting from Teams...');
+    setStatus('Ingesting meeting transcript...');
     const token = document.cookie.split('; ').find(row => row.startsWith('ms_token='))?.split('=')[1];
 
     const res = await fetch('/api/ingest/teams', {
@@ -67,10 +73,11 @@ export default function MeetingAI() {
 
     if (res.ok) {
       await loadMeetings();
-      setStatus('Success! Meeting ingested.');
+      setStatus('Ingest complete.');
+      setTimeout(() => setStatus(''), 3000);
     } else {
       const err = await res.json();
-      setStatus('Failed: ' + err.error);
+      setStatus('Ingest failed: ' + err.error);
     }
   }
 
@@ -78,31 +85,36 @@ export default function MeetingAI() {
   async function doUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
-    setStatus('Uploading...');
+    setStatus('Uploading file...');
     const fd = new FormData();
     fd.append('file', file);
     const res = await fetch('/api/upload', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.success) {
       await loadMeetings();
-      setStatus('Uploaded: ' + data.meetingId);
+      setStatus('Uploaded successfully.');
+      setTimeout(() => setStatus(''), 3000);
     } else {
-      setStatus('Error: ' + data.error);
+      setStatus('Upload error: ' + data.error);
     }
   }
 
   async function getSummary() {
-    setStatus('Generating summary...');
-    const res = await fetch(`/api/summary/${selectedMeeting.meetingId}`);
-    setSummary(await res.json());
-    setStatus('');
+    if (!summary) {
+      setStatus('Generating AI summary...');
+      const res = await fetch(`/api/summary/${selectedMeeting.meetingId}`);
+      setSummary(await res.json());
+      setStatus('');
+    }
   }
 
   async function getActions() {
-    setStatus('Extracting actions...');
-    const res = await fetch(`/api/actions/${selectedMeeting.meetingId}`);
-    setActionItems(await res.json());
-    setStatus('');
+    if (!actionItems) {
+      setStatus('Extracting action items...');
+      const res = await fetch(`/api/actions/${selectedMeeting.meetingId}`);
+      setActionItems(await res.json());
+      setStatus('');
+    }
   }
 
   async function sendChat() {
@@ -110,7 +122,7 @@ export default function MeetingAI() {
     const msg = { role: 'user', content: chatInput };
     setChatMessages([...chatMessages, msg]);
     setChatInput('');
-    setStatus('Thinking...');
+    setStatus('AI is thinking...');
     try {
       const res = await fetch(`/api/chat/${selectedMeeting.meetingId}`, {
         method: 'POST',
@@ -129,133 +141,279 @@ export default function MeetingAI() {
     setStatus('');
   }
 
+  const handleMeetingSelect = (m) => {
+    setSelectedMeeting(m);
+    setView('overview');
+    setChatMessages([]);
+    setSummary(null);
+    setActionItems(null);
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
   return (
-    <div>
-      <h1>MeetingAI (First Shell)</h1>
-      <p>Status: {status || 'Ready'}</p>
+    <div className="app-container">
+      {/* Top Navigation / Header */}
+      <header className="app-header">
+        <div className="app-brand">
+          <span style={{ fontSize: '20px' }}>⌯</span> MeetingAI Assistant
+        </div>
+        <div className="app-status">
+          <button onClick={toggleTheme} className="header-action-btn" title="Toggle Dark/Light Mode">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+          {status && <span>{status}</span>}
+        </div>
+      </header>
 
-      <div style={{ display: 'flex', gap: '20px' }}>
-        {/* Sidebar */}
-        <div style={{ width: '350px' }}>
-          <h3>Real-World Sync</h3>
-          {!isLoggedIn ? (
-            <button onClick={() => window.location.href = '/api/auth/login'} style={{ background: '#0078d4', color: 'white', border: 'none', padding: '10px' }}>
-              Login with Microsoft
-            </button>
-          ) : (
-            <div>
-              <p>Connected to Teams</p>
-              <button onClick={() => { document.cookie = 'ms_token=; Max-Age=0'; setIsLoggedIn(false); }}>Logout</button>
-              <h4>Recent Meetings</h4>
-              <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #eee', padding: '5px' }}>
-                {realMeetings.length === 0 ? <p style={{ padding: '10px', color: '#666', fontStyle: 'italic' }}>No recent online meetings found (Last 7 Days).</p> : realMeetings.map(rm => (
-                  <div key={rm.id} style={{ fontSize: '0.8em', marginBottom: '10px', borderBottom: '1px solid #fafafa' }}>
-                    <strong>{rm.subject}</strong><br />
-                    <button onClick={() => ingestMeeting(rm.id)}>Ingest This Meeting</button>
+      <div className="main-layout">
+        {/* Left Sidebar */}
+        <div className="sidebar">
+          {/* Teams Sync Section */}
+          <div className="sidebar-section">
+            <div className="sidebar-title">Microsoft Teams Sync</div>
+            <div style={{ padding: '0 16px' }}>
+              {!isLoggedIn ? (
+                <button
+                  onClick={() => window.location.href = '/api/auth/login'}
+                  className="primary"
+                  style={{ width: '100%', fontSize: '13px' }}
+                >
+                  Connect Teams
+                </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                    <span style={{ color: 'green' }}>✓ Connected</span>
+                    <button
+                      onClick={() => { document.cookie = 'ms_token=; Max-Age=0'; setIsLoggedIn(false); }}
+                      style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                    >
+                      Disconnect
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <hr />
-          <h3>Local Controls</h3>
-          <button onClick={doImport}>Import Mock Data</button>
 
-          <input type="file" onChange={doUpload} />
-          <hr />
-          <h3>Meetings</h3>
-          {meetings.map(m => (
-            <div
-              key={m.meetingId}
-              className={`meeting-item ${selectedMeeting?.meetingId === m.meetingId ? 'active-meeting' : ''}`}
-              onClick={() => { setSelectedMeeting(m); setView('overview'); setChatMessages([]); setSummary(null); setActionItems(null); }}
-            >
-              <strong>{m.meetingId}</strong><br />
-              <small>{m.entries?.length || 0} entries | {m.source}</small>
+                  <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #E1DFDD', borderRadius: '4px' }}>
+                    {realMeetings.length === 0 ? (
+                      <div style={{ padding: '8px', fontSize: '12px', color: '#666' }}>No recent meetings found.</div>
+                    ) : (
+                      realMeetings.map(rm => (
+                        <div key={rm.id} style={{ padding: '8px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={rm.subject}>{rm.subject}</span>
+                          <button
+                            onClick={() => ingestMeeting(rm.id)}
+                            style={{ border: 'none', background: 'transparent', color: '#6264A7', cursor: 'pointer', fontSize: '16px', padding: '0 4px' }}
+                            title="Ingest Transcript"
+                          >
+                            ⇓
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
+          </div>
+
+          <div style={{ borderBottom: '1px solid #E1DFDD', margin: '8px 0' }}></div>
+
+          {/* Local / Ingested Meetings List */}
+          <div className="sidebar-section" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="sidebar-title">Recorded Meetings</div>
+            <div className="meeting-list">
+              {meetings.map(m => (
+                <div
+                  key={m.meetingId}
+                  className={`meeting-item ${selectedMeeting?.meetingId === m.meetingId ? 'active' : ''}`}
+                  onClick={() => handleMeetingSelect(m)}
+                >
+                  <div className="meeting-item-title">{m.meetingId}</div>
+                  <div className="meeting-item-meta">
+                    {m.entries?.length || 0} segments • {new Date().toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ padding: '16px', borderTop: '1px solid #E1DFDD' }}>
+              <button
+                className="secondary"
+                style={{ width: '100%', marginBottom: '8px', fontSize: '12px' }}
+                onClick={() => document.getElementById('file-upload').click()}
+              >
+                Upload Transcript
+              </button>
+              <input id="file-upload" type="file" onChange={doUpload} style={{ display: 'none' }} />
+
+
+            </div>
+          </div>
         </div>
 
-        {/* Main */}
-        <div style={{ flex: 1 }}>
+        {/* Main Content Stage */}
+        <div className="content-stage">
           {selectedMeeting ? (
             <>
-              <h2>Meeting: {selectedMeeting.meetingId}</h2>
-              <div className="tabs">
-                <button onClick={() => setView('overview')}>Overview</button>
-                <button onClick={() => { setView('summary'); if (!summary) getSummary(); }}>Summary</button>
-                <button onClick={() => { setView('actions'); if (!actionItems) getActions(); }}>Actions</button>
-                <button onClick={() => setView('chat')}>Chat</button>
+              <div className="stage-header">
+                <div className="stage-title">{selectedMeeting.meetingId}</div>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '16px' }}>
+                  Source: {selectedMeeting.source} | Duration: {selectedMeeting.durationSeconds || 'Unknown'}s
+                </div>
+
+                <div className="tabs">
+                  <button className={`tab-btn ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>Transcript</button>
+                  <button className={`tab-btn ${view === 'summary' ? 'active' : ''}`} onClick={() => { setView('summary'); getSummary(); }}>AI Summary</button>
+                  <button className={`tab-btn ${view === 'actions' ? 'active' : ''}`} onClick={() => { setView('actions'); getActions(); }}>Action Items</button>
+                  <button className={`tab-btn ${view === 'chat' ? 'active' : ''}`} onClick={() => setView('chat')}>☕︎ Chat</button>
+                </div>
               </div>
 
-              <div className="tab-content">
+              <div className="stage-content">
                 {view === 'overview' && (
                   <div>
-                    <p><strong>Source:</strong> {selectedMeeting.source}</p>
-                    <p><strong>Duration:</strong> {selectedMeeting.durationSeconds}s</p>
-
                     {selectedMeeting.recordingUrl && (
-                      <div style={{ margin: '20px 0', background: '#000', padding: '10px', borderRadius: '8px' }}>
-                        <h4 style={{ color: '#fff', marginTop: 0 }}>Meeting Recording</h4>
-                        <video controls width="100%" src={selectedMeeting.recordingUrl}>
+                      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                        <video controls width="100%" src={selectedMeeting.recordingUrl} style={{ display: 'block' }}>
                           Your browser does not support the video tag.
                         </video>
                       </div>
                     )}
 
-                    <h3>Transcript (First 20)</h3>
-                    {selectedMeeting.entries?.slice(0, 20).map((e, i) => (
-                      <div key={i} style={{ marginBottom: '5px' }}>
-                        <code>[{e.start}] <strong>{e.speaker}</strong>:</code> {e.text}
+                    <div className="card">
+                      <h4 style={{ marginBottom: '16px' }}>Transcript Preview</h4>
+                      <div style={{ fontFamily: 'Segoe UI, sans-serif', fontSize: '13px', lineHeight: '1.6' }}>
+                        {selectedMeeting.entries?.slice(0, 50).map((e, i) => (
+                          <div key={i} style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
+                            <div className="transcript-speaker" style={{ fontWeight: '600', minWidth: '80px', color: 'var(--teams-purple)' }}>{e.speaker}</div>
+                            <div style={{ color: 'var(--text-primary)' }}>{e.text}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', minWidth: '40px', textAlign: 'right' }}>{e.start}</div>
+                          </div>
+                        ))}
+                        {selectedMeeting.entries?.length > 50 && <div style={{ textAlign: 'center', padding: '10px', color: '#666', fontStyle: 'italic' }}>... {selectedMeeting.entries.length - 50} more entries ...</div>}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 )}
 
                 {view === 'summary' && (
-                  <div>
-                    {summary?.error ? <p style={{ color: 'red' }}>{summary.error}</p> : <pre>{summary?.summary || 'No summary yet.'}</pre>}
+                  <div className="card">
+                    {summary?.error ? (
+                      <p style={{ color: '#a80000' }}>Error: {summary.error}</p>
+                    ) : (
+                      <div style={{ lineHeight: '1.6' }}>
+                        {summary ? (
+                          <div dangerouslySetInnerHTML={{ __html: summary.summary.replace(/\n/g, '<br/>') }} />
+                        ) :
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="spinner"></div> Generating summary...
+                          </div>
+                        }
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {view === 'actions' && (
-                  <div>
-                    {actionItems?.error ? <p style={{ color: 'red' }}>{actionItems.error}</p> : (
-                      <ul>
-                        {actionItems?.actionItems?.map((item, i) => (
-                          <li key={i}>
-                            <strong>{item.task}</strong> ({item.owner}) - <em>{item.priority}</em>
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="card">
+                    {actionItems?.error ? (
+                      <p style={{ color: '#a80000' }}>Error: {actionItems.error}</p>
+                    ) : (
+                      <div style={{ width: '100%' }}>
+                        {!actionItems ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Generating action items...</div>
+                        ) : (
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2px solid #f0f0f0', textAlign: 'left' }}>
+                                <th style={{ padding: '8px' }}>Task</th>
+                                <th style={{ padding: '8px', width: '150px' }}>Owner</th>
+                                <th style={{ padding: '8px', width: '100px' }}>Priority</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {actionItems.actionItems?.map((item, i) => (
+                                <tr key={i} style={{ borderBottom: '1px solid #f9f9f9' }}>
+                                  <td style={{ padding: '12px 8px' }}>{item.task}</td>
+                                  <td style={{ padding: '12px 8px' }}>
+                                    <span style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>{item.owner}</span>
+                                  </td>
+                                  <td style={{ padding: '12px 8px' }}>
+                                    <span style={{
+                                      color: item.priority?.toLowerCase().includes('high') ? '#d13438' : '#605e5c',
+                                      fontWeight: item.priority?.toLowerCase().includes('high') ? '600' : '400'
+                                    }}>
+                                      {item.priority}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
 
                 {view === 'chat' && (
-                  <div>
-                    <div style={{ height: '400px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', marginBottom: '10px', background: '#fff' }}>
+                  <div className="chat-container">
+                    <div className="chat-history">
+                      {chatMessages.length === 0 && (
+                        <div style={{ textAlign: 'center', color: '#666', marginTop: '40px' }}>
+                          <p>Ask questions about this meeting transcript.</p>
+                          <p style={{ fontSize: '12px' }}>Examples: "What did John say about the deadline?", "Summarize the budget discussion."</p>
+                        </div>
+                      )}
+
                       {chatMessages.map((m, i) => (
-                        <div key={i} style={{ marginBottom: '15px' }}>
-                          <div><strong>{m.role}:</strong> {m.content}</div>
-                          {m.sources && (
-                            <div style={{ fontSize: '0.8em', color: '#666', marginTop: '5px', paddingLeft: '10px', borderLeft: '2px solid #ddd' }}>
-                              <strong>RAG Sources:</strong> {m.sources.map((s, si) => (
-                                <div key={si} style={{ marginBottom: '3px' }}>• {s.text.substring(0, 100)}...</div>
-                              ))}
-                            </div>
-                          )}
+                        <div key={i} className={`chat-message ${m.role}`}>
+                          <div className="message-role">{m.role === 'user' ? 'You' : 'MeetingAI'}</div>
+                          <div className="message-bubble">
+                            {m.content}
+                            {m.sources && (
+                              <div style={{ marginTop: '8px' }}>
+                                {m.sources.map((s, si) => (
+                                  <div key={si} className="source-citation">
+                                    <div style={{ fontWeight: '600', marginBottom: '2px' }}>Source {si + 1}</div>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.text}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
+                      <div ref={chatEndRef} />
                     </div>
-                    <input style={{ width: '80%' }} value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Ask about meeting..." />
-                    <button onClick={sendChat}>Send</button>
+
+                    <div className="chat-input-area">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={e => setChatInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && sendChat()}
+                        placeholder="Type a message..."
+                      />
+                      <button className="primary" onClick={sendChat} style={{ padding: '8px 20px' }}>
+                        Send
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             </>
           ) : (
-            <p>Select a meeting from the sidebar.</p>
+            <div className="welcome-state">
+              <div style={{ fontSize: '48px', color: '#E1DFDD', marginBottom: '16px' }}>☕︎</div>
+              <h3>Select a meeting to begin</h3>
+              <p>Choose a meeting from the sidebar or upload a new transcript.</p>
+            </div>
           )}
         </div>
       </div>
