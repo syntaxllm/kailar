@@ -11,7 +11,17 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
         }
 
+        // Optimzied: Check Cache First
+        if (meeting.actionItems) {
+            return NextResponse.json(meeting.actionItems);
+        }
+
         const result = await extractActionItems(meeting);
+
+        // Cache the result to DB
+        const { updateMeeting } = await import('../../../../lib/backend-adapter.js');
+        await updateMeeting(id, { actionItems: result });
+
         return NextResponse.json(result);
     } catch (error) {
         console.error('Action item extraction error:', error);
