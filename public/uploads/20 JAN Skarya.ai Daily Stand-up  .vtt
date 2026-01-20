@@ -1,0 +1,610 @@
+WEBVTT
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/11-0
+00:00:06.273 --> 00:00:14.086
+<v Yogesh Mahajan>OK so update from yesterday I implemented
+Microsoft SSO so user can sign in using</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/11-1
+00:00:14.086 --> 00:00:21.709
+<v Yogesh Mahajan>Microsoft account like official account
+like Google account like what we did in</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/11-2
+00:00:21.709 --> 00:00:23.233
+<v Yogesh Mahajan>Google accounts.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/12-0
+00:00:24.033 --> 00:00:33.233
+<v Yogesh Mahajan>So, so once it deployed.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/13-0
+00:00:37.473 --> 00:00:38.913
+<v Yogesh Mahajan>Any questions?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/14-0
+00:00:40.193 --> 00:00:43.080
+<v Uday Shastri>OK,
+so we need a Microsoft account for that,</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/14-1
+00:00:43.080 --> 00:00:43.593
+<v Uday Shastri>correct?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/16-0
+00:00:44.193 --> 00:00:47.513
+<v Yogesh Mahajan>Your official account is also Microsoft
+account, so that's fine.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/17-0
+00:00:49.593 --> 00:00:51.473
+<v Uday Shastri>OK, the same account we can use.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/18-0
+00:00:52.833 --> 00:00:53.193
+<v Yogesh Mahajan>Yeah.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/20-0
+00:00:54.153 --> 00:00:55.913
+<v Uday Shastri>OK, that's fine.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/19-0
+00:00:55.033 --> 00:00:55.153
+<v Yogesh Mahajan>But.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/21-0
+00:00:57.593 --> 00:01:01.673
+<v Yogesh Mahajan>You have to create new account,
+I mean subscriber account.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/22-0
+00:01:02.113 --> 00:01:02.273
+<v Uday Shastri>Mm.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/23-0
+00:01:03.033 --> 00:01:07.433
+<v Yogesh Mahajan>That existing account migration will not
+work.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/24-0
+00:01:09.913 --> 00:01:10.153
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/25-0
+00:01:10.513 --> 00:01:15.393
+<v Yogesh Mahajan>I'm working on that,
+but it is still in development phase.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/27-0
+00:01:16.873 --> 00:01:19.673
+<v Yogesh Mahajan>So please try try to make new account.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/26-0
+00:01:16.953 --> 00:01:17.113
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/28-0
+00:01:21.473 --> 00:01:22.273
+<v Uday Shastri>OK, fine.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/29-0
+00:01:25.153 --> 00:01:25.913
+<v Yogesh Mahajan>Yeah.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/30-0
+00:01:25.193 --> 00:01:28.313
+<v Uday Shastri>And what about the box?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/32-0
+00:01:29.553 --> 00:01:31.593
+<v Uday Shastri>Any new pictures?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/33-0
+00:01:32.953 --> 00:01:37.793
+<v Yogesh Mahajan>No, right now knowing any fixes,
+only the SSO is implemented.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/34-0
+00:01:38.313 --> 00:01:38.433
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/35-0
+00:01:43.313 --> 00:01:45.753
+<v Yogesh Mahajan>OK, then that's all from my side.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/36-0
+00:01:47.353 --> 00:01:51.393
+<v Uday Shastri>OK. And have you gone through the board?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/37-0
+00:01:51.913 --> 00:01:52.633
+<v Yogesh Mahajan>Oh.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/38-0
+00:01:53.513 --> 00:01:53.633
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/39-0
+00:01:55.673 --> 00:01:55.793
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/45-0
+00:02:22.113 --> 00:02:27.353
+<v Uday Shastri>OK.
+And after that what we have for for today?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/46-0
+00:02:29.553 --> 00:02:31.793
+<v Yogesh Mahajan>Oh, not sure.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/47-0
+00:02:32.553 --> 00:02:32.833
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/48-0
+00:02:32.833 --> 00:02:38.353
+<v Yogesh Mahajan>Try to test this SSO before 10 or 11:00
+AM.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/49-0
+00:02:40.073 --> 00:02:40.193
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/50-0
+00:02:40.353 --> 00:02:40.553
+<v Yogesh Mahajan>Kuki.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/52-0
+00:02:42.793 --> 00:02:53.233
+<v Yogesh Mahajan>11:00 AM.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/51-0
+00:02:49.913 --> 00:02:50.033
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/53-0
+00:02:55.593 --> 00:02:56.553
+<v Uday Shastri>3K.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/54-0
+00:03:04.553 --> 00:03:04.673
+<v Yogesh Mahajan>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/55-0
+00:03:07.993 --> 00:03:08.793
+<v Uday Shastri>OK. Thank you, dear.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/56-0
+00:03:09.713 --> 00:03:12.143
+<v Kakoli  Banerjee>Yeah,
+so from my side I resolve all the</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/56-1
+00:03:12.143 --> 00:03:14.633
+<v Kakoli  Banerjee>resource related bug and also time sheet.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/57-0
+00:03:18.153 --> 00:03:21.370
+<v Kakoli  Banerjee>Uh,
+after deployment I update that uh bug</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/57-1
+00:03:21.370 --> 00:03:21.753
+<v Kakoli  Banerjee>pool.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/59-0
+00:03:22.913 --> 00:03:27.911
+<v Kakoli  Banerjee>Because there is some bug related for
+time sheet and resource that you Ritika</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/59-1
+00:03:27.911 --> 00:03:29.513
+<v Kakoli  Banerjee>and Deepika sign correct.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/60-0
+00:03:33.193 --> 00:03:33.313
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/62-0
+00:03:34.193 --> 00:03:40.596
+<v Kakoli  Banerjee>So yeah, so I already resolved it,
+but after deployment I also update that</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/62-1
+00:03:40.596 --> 00:03:45.633
+<v Kakoli  Banerjee>bug related home.
+There is a too many bugs assigned to me.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/61-0
+00:03:46.473 --> 00:03:46.593
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/64-0
+00:03:49.793 --> 00:03:53.033
+<v Uday Shastri>So are you already code Kakoli?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/63-0
+00:03:50.033 --> 00:03:51.153
+<v Kakoli  Banerjee>Oh yeah, that's enough.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/65-0
+00:03:52.713 --> 00:03:55.593
+<v Kakoli  Banerjee>Yeah, yeah, I already pushed that code,
+but not deployed yet.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/66-0
+00:03:56.473 --> 00:03:56.593
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/68-0
+00:03:58.673 --> 00:04:02.802
+<v Uday Shastri>OK,
+so during the deployment you can also</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/68-1
+00:04:02.802 --> 00:04:04.473
+<v Uday Shastri>update the board.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/69-0
+00:04:03.673 --> 00:04:05.513
+<v Kakoli  Banerjee>Yeah, yeah,
+after deployment I update the code.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/67-0
+00:04:03.993 --> 00:04:04.033
+<v Uday Shastri>Uh.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/70-0
+00:04:06.073 --> 00:04:06.353
+<v Uday Shastri>OK, OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/72-0
+00:04:09.113 --> 00:04:09.833
+<v Uday Shastri>Thanks.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/71-0
+00:04:09.753 --> 00:04:10.193
+<v Kakoli  Banerjee>Thank you.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/73-0
+00:04:18.153 --> 00:04:20.993
+<v Uday Shastri>Akash, any update from your side?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/75-0
+00:04:22.593 --> 00:04:29.877
+<v Akash Kundu>Yeah,
+it's actually time related to this is</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/75-1
+00:04:29.877 --> 00:04:33.353
+<v Akash Kundu>deployed or deployed.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/74-0
+00:04:32.553 --> 00:04:32.673
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/76-0
+00:04:34.073 --> 00:04:34.193
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/77-0
+00:04:40.113 --> 00:04:44.713
+<v Uday Shastri>So uh, my day wala Pura cover O Jaga,
+right?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/78-0
+00:04:44.593 --> 00:04:45.193
+<v Akash Kundu>Mm.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/79-0
+00:04:46.753 --> 00:04:50.473
+<v Uday Shastri>OK. Any other new implementation here?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/80-0
+00:04:52.393 --> 00:04:52.713
+<v Akash Kundu>Mm.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/83-0
+00:04:54.313 --> 00:05:03.433
+<v Akash Kundu>Implementation actually have deployed.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/81-0
+00:05:00.713 --> 00:05:00.833
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/82-0
+00:05:05.113 --> 00:05:05.233
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/93-0
+00:05:44.313 --> 00:05:44.553
+<v Akash Kundu>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/112-0
+00:06:47.273 --> 00:06:49.113
+<v Uday Shastri>Yes, yes, Akash.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/111-0
+00:06:47.673 --> 00:06:48.193
+<v Kakoli  Banerjee>Yes.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/113-0
+00:06:50.713 --> 00:06:51.113
+<v Uday Shastri>Oh, OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/116-0
+00:07:01.793 --> 00:07:15.993
+<v Akash Kundu>Task name, status, priority type, levels,
+dates and assignee field.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/118-0
+00:07:24.593 --> 00:07:35.233
+<v Akash Kundu>Assign group collaborator allocated
+default actual report completion.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/120-0
+00:07:44.873 --> 00:07:45.793
+<v Akash Kundu>Excel and export.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/121-0
+00:07:47.393 --> 00:07:58.273
+<v Akash Kundu>Or your field customization said,
+for example, allocated default of.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/122-0
+00:08:02.873 --> 00:08:05.919
+<v Uday Shastri>OK,
+so simply we can add more field we can</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/122-1
+00:08:05.919 --> 00:08:06.273
+<v Uday Shastri>hide.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/123-0
+00:08:06.553 --> 00:08:10.833
+<v Akash Kundu>Did not field available.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/124-0
+00:08:12.873 --> 00:08:15.793
+<v Akash Kundu>Of default builds as well as stump fields.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/125-0
+00:08:18.993 --> 00:08:22.313
+<v Uday Shastri>OK. So both in board and project, correct?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/126-0
+00:08:21.793 --> 00:08:24.873
+<v Akash Kundu>Both in both in both on project aspect.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/127-0
+00:08:25.233 --> 00:08:26.273
+<v Uday Shastri>OK, OK, perfect.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/131-0
+00:08:39.833 --> 00:08:44.473
+<v Uday Shastri>OK, got it. Any other things?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/132-0
+00:08:46.273 --> 00:08:51.713
+<v Akash Kundu>Oh, will you my day. Already.
+Thanks again.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/133-0
+00:08:54.793 --> 00:08:55.033
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/135-0
+00:08:54.993 --> 00:09:04.233
+<v Ritika Saini>Akash all task projector board right or
+other custom fields.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/134-0
+00:08:56.113 --> 00:08:56.233
+<v Akash Kundu>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/136-0
+00:09:05.513 --> 00:09:06.473
+<v Ritika Saini>Those are the key.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/137-0
+00:09:16.193 --> 00:09:17.353
+<v Ritika Saini>Gotcha.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/139-0
+00:09:17.993 --> 00:09:19.433
+<v Akash Kundu>So.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/138-0
+00:09:18.793 --> 00:09:19.673
+<v Ritika Saini>Take care.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/140-0
+00:09:23.233 --> 00:09:25.233
+<v Akash Kundu>I'm never the best.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/141-0
+00:09:25.633 --> 00:09:26.313
+<v Ritika Saini>Take care.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/147-0
+00:09:47.113 --> 00:09:48.633
+<v Akash Kundu>OK, that's all from my side.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/148-0
+00:09:59.313 --> 00:10:03.113
+<v Akash Kundu>He deployed her already.
+He already deployed her.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/149-0
+00:10:04.473 --> 00:10:07.771
+<v Uday Shastri>OK,
+so I'll be my day while I do have</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/149-1
+00:10:07.771 --> 00:10:09.073
+<v Uday Shastri>deployment man.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/151-0
+00:10:11.833 --> 00:10:22.353
+<v Uday Shastri>OK, so with the deployed status.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/150-0
+00:10:17.193 --> 00:10:20.113
+<v Akash Kundu>Deployed with the update.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/152-0
+00:10:26.073 --> 00:10:26.313
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/153-0
+00:10:29.193 --> 00:10:30.873
+<v Uday Shastri>OK. Anything else?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/155-0
+00:10:33.873 --> 00:10:42.954
+<v Dipeeka Wagh>Yasudhay Ek confirm Karnata Yogesh Kasad
+Ki Jab project file section a file main</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/154-0
+00:10:38.713 --> 00:10:39.433
+<v Uday Shastri>Yeah.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/155-1
+00:10:42.954 --> 00:10:49.793
+<v Dipeeka Wagh>humblock folder create karte or folder ke
+file upload karte.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/156-0
+00:10:50.953 --> 00:11:07.913
+<v Dipeeka Wagh>Right. Or a delete delete permanently.
+Audit history so audit folder.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/157-0
+00:11:08.313 --> 00:11:22.204
+<v Dipeeka Wagh>Double audit name proper file name show
+ohh or a oh folder under delete key and</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/157-1
+00:11:22.204 --> 00:11:23.593
+<v Dipeeka Wagh>restore.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/159-0
+00:11:23.953 --> 00:11:31.753
+<v Dipeeka Wagh>Folder with file name is.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/161-0
+00:11:34.073 --> 00:11:35.433
+<v Yogesh Mahajan>In audit.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/160-0
+00:11:35.153 --> 00:11:35.473
+<v Dipeeka Wagh>Logesh.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/163-0
+00:11:36.953 --> 00:11:41.353
+<v Dipeeka Wagh>Audit, audit, Audit.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/162-0
+00:11:37.433 --> 00:11:38.473
+<v Yogesh Mahajan>Audit me.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/164-0
+00:11:44.313 --> 00:11:44.913
+Hopeless.
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/166-0
+00:11:52.433 --> 00:11:57.993
+<v Dipeeka Wagh>Let me my screen be the kinded miss.
+It was show called the do up quite the.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/165-0
+00:11:54.953 --> 00:11:56.033
+<v Yogesh Mahajan>On the.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/167-0
+00:12:02.753 --> 00:12:03.553
+<v Dipeeka Wagh>Uh, the.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/168-0
+00:12:06.313 --> 00:12:06.433
+<v Yogesh Mahajan>Yeah.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/169-0
+00:12:11.353 --> 00:12:11.673
+<v Dipeeka Wagh>Hello.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/170-0
+00:12:12.913 --> 00:12:14.433
+<v Yogesh Mahajan>Yeah, I can see the screen.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/175-0
+00:12:30.633 --> 00:12:39.673
+<v Dipeeka Wagh>Essay or or canvas user docs X if folder
+file file file.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/177-0
+00:12:58.833 --> 00:12:59.153
+<v Dipeeka Wagh>Thank you.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/178-0
+00:12:59.713 --> 00:13:00.433
+<v Yogesh Mahajan>Thank you.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/180-0
+00:13:05.993 --> 00:13:10.153
+<v Uday Shastri>OK, Pranav Kudu, anything from your side?</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/181-0
+00:13:14.673 --> 00:13:15.033
+<v Uday Shastri>Hello.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/183-0
+00:13:33.113 --> 00:13:33.233
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/184-0
+00:13:35.153 --> 00:13:35.673
+<v Uday Shastri>Perfect.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/187-0
+00:13:40.313 --> 00:13:56.833
+<v Khushboo Chaudhari>OK, so many yes. Hello. Hi Sir.
+So many canvas features.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/185-0
+00:13:40.873 --> 00:13:41.953
+<v Uday Shastri>Thanks, Pranav.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/186-0
+00:13:44.873 --> 00:13:45.433
+<v Uday Shastri>Yeah, hi.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/188-0
+00:13:57.593 --> 00:14:02.833
+<v Khushboo Chaudhari>Sokhal Nikhil sarne Kucha changes bataihe
+woman Kiye.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/189-0
+00:14:03.673 --> 00:14:04.953
+<v Khushboo Chaudhari>That's from my side.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/190-0
+00:14:06.153 --> 00:14:06.593
+<v Uday Shastri>OK.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/191-0
+00:14:10.753 --> 00:14:12.393
+<v Uday Shastri>Thanks. Thank you, Kuju.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/192-0
+00:14:16.353 --> 00:14:17.993
+<v Uday Shastri>I'll be nice.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/193-0
+00:14:23.833 --> 00:14:24.633
+<v Khushboo Chaudhari>Yeah, yeah.</v>
+
+e362faa8-295c-4c4c-9a5d-501959fdcf94/194-0
+00:14:28.953 --> 00:14:32.353
+<v Uday Shastri>OK, let's get back to work guys.
+Thank you. Thank you so much.</v>

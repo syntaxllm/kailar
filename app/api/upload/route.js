@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { parseVTT } from '../../../lib/parser.js';
 import { chunkEntries } from '../../../lib/indexer.js';
-import * as storage from '../../../lib/storage-files.js';
+import * as storage from '../../../lib/storage-prod.js';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 
@@ -61,21 +61,17 @@ export async function POST(request) {
                 }))
             };
 
-            // Save meeting
-            const existingMeetings = await storage.loadTranscripts();
-            const updatedMeetings = [...existingMeetings.filter(m => m.meetingId !== meetingId), meetingObj];
-            await storage.saveTranscripts(updatedMeetings);
+            // Save meeting to MongoDB
+            await storage.saveTranscripts(meetingObj);
 
-            // Generate and save chunks
+            // Generate and save chunks to MongoDB
             const chunks = chunkEntries(entries);
             chunks.forEach((c, i) => {
                 c.meetingId = meetingId;
                 c.chunkId = `${meetingId}#${String(i + 1).padStart(4, '0')}`;
             });
 
-            const existingChunks = await storage.loadChunks();
-            const updatedChunks = [...existingChunks.filter(c => c.meetingId !== meetingId), ...chunks];
-            await storage.saveChunks(updatedChunks);
+            await storage.saveChunks(chunks);
 
             // Save uploaded file
             const filePath = path.join(UPLOAD_DIR, fileName);
