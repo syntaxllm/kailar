@@ -29,6 +29,26 @@ export default function MeetingAI() {
     }
   }, [chatMessages, view]);
 
+  async function handleDeleteMeeting(id) {
+    if (!confirm('Are you sure you want to delete this meeting? This cannot be undone.')) return;
+
+    try {
+      const res = await fetch(`/api/meetings/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMeetings(prev => prev.filter(m => m.meetingId !== id));
+        if (selectedMeeting?.meetingId === id) {
+          setSelectedMeeting(null);
+          setView('welcome');
+        }
+      } else {
+        alert('Failed to delete meeting');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Delete failed');
+    }
+  }
+
   async function loadMeetings() {
     const res = await fetch('/api/transcripts');
     const data = await res.json();
@@ -233,9 +253,19 @@ export default function MeetingAI() {
                   className={`meeting-item ${selectedMeeting?.meetingId === m.meetingId ? 'active' : ''}`}
                   onClick={() => handleMeetingSelect(m)}
                 >
-                  <div className="meeting-item-title">{m.meetingId}</div>
+                  <div className="meeting-item-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="meeting-item-title">{m.meetingId}</div>
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteMeeting(m.meetingId); }}
+                      style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '14px', position: 'absolute', right: '10px', top: '10px' }}
+                      title="Delete Meeting"
+                    >
+                      ✘
+                    </button>
+                  </div>
                   <div className="meeting-item-meta">
-                    {m.entries?.length || 0} segments • {new Date().toLocaleDateString()}
+                    {m.entries?.length || 0} segments • {new Date(m.importedAt || Date.now()).toLocaleDateString()}
                   </div>
                 </div>
               ))}

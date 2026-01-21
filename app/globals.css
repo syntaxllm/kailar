@@ -158,6 +158,18 @@ a {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  position: relative;
+  /* Context for absolute positioning of delete btn */
+}
+
+/* Hide delete button by default */
+.meeting-item .delete-btn {
+  display: none;
+}
+
+/* Show on hover */
+.meeting-item:hover .delete-btn {
+  display: block;
 }
 
 .meeting-item:hover {
