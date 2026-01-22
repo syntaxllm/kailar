@@ -12,6 +12,9 @@ export default function MeetingAI() {
   const [status, setStatus] = useState('');
   const [realMeetings, setRealMeetings] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const [showAccountSelector, setShowAccountSelector] = useState(false);
+  const [availableAccounts, setAvailableAccounts] = useState([]);
   const [theme, setTheme] = useState('light');
   const chatEndRef = useRef(null);
 
@@ -57,10 +60,42 @@ export default function MeetingAI() {
 
 
 
-  function checkLogin() {
+  async function checkLogin() {
     const hasToken = document.cookie.includes('ms_token');
     setIsLoggedIn(hasToken);
-    if (hasToken) loadRealMeetings();
+    if (hasToken) {
+      await loadUserInfo();
+      await loadRealMeetings();
+    }
+  }
+
+  async function loadUserInfo() {
+    try {
+      const res = await fetch('/api/user/info');
+      if (res.ok) {
+        const data = await res.json();
+        setUserInfo(data);
+      } else {
+        console.error('Failed to load user info');
+        setUserInfo(null);
+      }
+    } catch (e) {
+      console.error('Error loading user info:', e);
+      setUserInfo(null);
+    }
+  }
+
+  async function checkMultipleAccounts() {
+    // Check if there are multiple Microsoft accounts logged in
+    // This is a simplified check - in production you'd use MSAL's account APIs
+    try {
+      // Try to detect multiple accounts via localStorage or sessionStorage
+      // For now, we'll show account selector if user explicitly requests it
+      // In production, integrate with MSAL's getAllAccounts()
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
   async function loadRealMeetings() {
@@ -98,6 +133,32 @@ export default function MeetingAI() {
     } else {
       const err = await res.json();
       setStatus('Ingest failed: ' + err.error);
+    }
+  }
+
+  async function requestAccess(meetingId, organizerEmail, organizerName, meetingSubject) {
+    setStatus('Preparing access request...');
+    const token = document.cookie.split('; ').find(row => row.startsWith('ms_token='))?.split('=')[1];
+
+    const res = await fetch('/api/teams/request-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: token, meetingId })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      // Open email client with pre-filled message
+      if (data.mailtoLink) {
+        window.location.href = data.mailtoLink;
+        setStatus('Email client opened. Please send the request to the organizer.');
+      } else {
+        setStatus(`Request prepared. Contact ${organizerEmail} to request access.`);
+      }
+      setTimeout(() => setStatus(''), 5000);
+    } else {
+      const err = await res.json();
+      setStatus('Request failed: ' + err.error);
     }
   }
 
@@ -200,7 +261,7 @@ export default function MeetingAI() {
             <div style={{ padding: '0 16px' }}>
               {!isLoggedIn ? (
                 <button
-                  onClick={() => window.location.href = '/api/auth/login'}
+                  onClick={() => window.location.href = '/api/auth/login?prompt=select_account'}
                   className="primary"
                   style={{ width: '100%', fontSize: '13px' }}
                 >
@@ -208,30 +269,74 @@ export default function MeetingAI() {
                 </button>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* User Account Info */}
+                  {userInfo && (
+                    <div style={{ 
+                      padding: '8px', 
+                      background: '#f5f5f5', 
+                      borderRadius: '4px', 
+                      fontSize: '11px',
+                      border: '1px solid #E1DFDD'
+                    }}>
+                      <div style={{ fontWeight: '600', marginBottom: '4px', color: '#323130' }}>
+                        {userInfo.displayName || 'User'}
+                      </div>
+                      <div style={{ color: '#666', fontSize: '10px', wordBreak: 'break-all' }}>
+                        {userInfo.email}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
                     <span style={{ color: 'green' }}>✓ Connected</span>
-                    <button
-                      onClick={() => { document.cookie = 'ms_token=; Max-Age=0'; setIsLoggedIn(false); }}
-                      style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '11px', padding: 0 }}
-                    >
-                      Disconnect
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => setShowAccountSelector(true)}
+                        style={{ background: 'none', border: 'none', color: '#6264A7', cursor: 'pointer', fontSize: '11px', padding: '2px 4px' }}
+                        title="Switch Account"
+                      >
+                        Switch
+                      </button>
+                      <button
+                        onClick={() => { document.cookie = 'ms_token=; Max-Age=0'; setIsLoggedIn(false); setUserInfo(null); }}
+                        style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #E1DFDD', borderRadius: '4px' }}>
                     {realMeetings.length === 0 ? (
-                      <div style={{ padding: '8px', fontSize: '12px', color: '#666' }}>No recent meetings found.</div>
+                      <div style={{ padding: '8px', fontSize: '12px', color: '#666' }}>No meetings with transcripts available.</div>
                     ) : (
                       realMeetings.map(rm => (
-                        <div key={rm.id} style={{ padding: '8px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={rm.subject}>{rm.subject}</span>
-                          <button
-                            onClick={() => ingestMeeting(rm.id)}
-                            style={{ border: 'none', background: 'transparent', color: '#6264A7', cursor: 'pointer', fontSize: '16px', padding: '0 4px' }}
-                            title="Ingest Transcript"
-                          >
-                            ⇓
-                          </button>
+                        <div key={rm.id} style={{ padding: '8px', borderBottom: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={rm.subject}>{rm.subject}</span>
+                            {rm.hasAccess ? (
+                              <button
+                                onClick={() => ingestMeeting(rm.id)}
+                                style={{ border: 'none', background: 'transparent', color: '#6264A7', cursor: 'pointer', fontSize: '16px', padding: '0 4px' }}
+                                title="Ingest Transcript"
+                              >
+                                ⇓
+                              </button>
+                            ) : rm.needsPermission ? (
+                              <button
+                                onClick={() => requestAccess(rm.id, rm.organizerEmail, rm.organizerName, rm.subject)}
+                                style={{ border: 'none', background: 'transparent', color: '#d13438', cursor: 'pointer', fontSize: '12px', padding: '2px 6px', borderRadius: '3px' }}
+                                title={`Request access from ${rm.organizerName || 'organizer'}`}
+                              >
+                                🔒 Request
+                              </button>
+                            ) : null}
+                          </div>
+                          {rm.needsPermission && rm.organizerName && (
+                            <div style={{ fontSize: '10px', color: '#666', fontStyle: 'italic' }}>
+                              Contact {rm.organizerName} for access
+                            </div>
+                          )}
                         </div>
                       ))
                     )}
@@ -447,6 +552,95 @@ export default function MeetingAI() {
           )}
         </div>
       </div>
+
+      {/* Account Selector Modal */}
+      {showAccountSelector && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>Select Account</h3>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+              Choose which Microsoft account to use for accessing Teams meetings:
+            </p>
+            
+            {/* Current Account */}
+            {userInfo && (
+              <div style={{
+                padding: '12px',
+                border: '2px solid #6264A7',
+                borderRadius: '4px',
+                marginBottom: '12px',
+                cursor: 'pointer',
+                background: '#f0f0ff'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                  {userInfo.displayName || 'Current User'}
+                </div>
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  {userInfo.email}
+                </div>
+                <div style={{ fontSize: '10px', color: '#6264A7', marginTop: '4px' }}>
+                  ✓ Currently Active
+                </div>
+              </div>
+            )}
+
+            {/* Option to login with different account */}
+            <div style={{
+              padding: '12px',
+              border: '1px solid #E1DFDD',
+              borderRadius: '4px',
+              marginBottom: '16px',
+              cursor: 'pointer',
+              background: '#f9f9f9'
+            }}
+            onClick={() => {
+              document.cookie = 'ms_token=; Max-Age=0';
+              window.location.href = '/api/auth/login?prompt=select_account';
+            }}>
+              <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                Use Different Account
+              </div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                Sign in with another Microsoft account
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowAccountSelector(false)}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #E1DFDD',
+                  background: 'white',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
