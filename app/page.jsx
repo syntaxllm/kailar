@@ -13,15 +13,43 @@ export default function MeetingAI() {
   const [realMeetings, setRealMeetings] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [theme, setTheme] = useState('light');
+  const [activeSpeakers, setActiveSpeakers] = useState({});
+  const [scheduledMeetings, setScheduledMeetings] = useState([]); // [meetingId, ...]
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     loadMeetings();
     checkLogin();
+    loadSchedules();
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // REAL-TIME UX: Poll for active meeting status (speakers)
+    const interval = setInterval(pollActiveBots, 3000);
+    return () => clearInterval(interval);
   }, []);
+
+  async function pollActiveBots() {
+    // Only poll if we have meetings that are in 'bot_joining' state
+    const botsToPoll = realMeetings.filter(m => m.access?.status === 'bot_joining' || m.access?.status === 'recording');
+    if (botsToPoll.length === 0) return;
+
+    for (const m of botsToPoll) {
+      // We'd need the sessionId from the initial response. 
+      // For now, let's assume we can query by meetingId if the bot-service supports it, 
+      // OR we use the check-access which we'll update to include bot session info.
+      try {
+        const res = await fetch(`/api/bot/status?meetingId=${m.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.currentSpeaker) {
+            setActiveSpeakers(prev => ({ ...prev, [m.id]: data.currentSpeaker }));
+          }
+        }
+      } catch (e) { }
+    }
+  }
 
   useEffect(() => {
     if (view === 'chat' && chatEndRef.current) {
@@ -69,7 +97,20 @@ export default function MeetingAI() {
       const res = await fetch('/api/teams/recent');
       if (res.ok) {
         const data = await res.json();
-        setRealMeetings(Array.isArray(data) ? data : []);
+        const meetingsList = Array.isArray(data) ? data : [];
+
+        // Enrich meetings with access status
+        const enriched = await Promise.all(meetingsList.map(async (m) => {
+          try {
+            const checkRes = await fetch(`/api/check-access?meetingId=${encodeURIComponent(m.id)}&joinUrl=${encodeURIComponent(m.webUrl || '')}`);
+            const checkData = await checkRes.json();
+            return { ...m, access: checkData };
+          } catch (e) {
+            return { ...m, access: { status: 'unknown' } };
+          }
+        }));
+
+        setRealMeetings(enriched);
         setStatus('');
       } else {
         const err = await res.json();
@@ -81,26 +122,79 @@ export default function MeetingAI() {
     }
   }
 
-  async function ingestMeeting(teamsId) {
-    setStatus('Ingesting meeting transcript...');
-    const token = document.cookie.split('; ').find(row => row.startsWith('ms_token='))?.split('=')[1];
-
-    const res = await fetch('/api/ingest/teams', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: token, teamsMeetingId: teamsId })
-    });
-
-    if (res.ok) {
-      await loadMeetings();
-      setStatus('Ingest complete.');
-      setTimeout(() => setStatus(''), 3000);
-    } else {
-      const err = await res.json();
-      setStatus('Ingest failed: ' + err.error);
-    }
+  async function loadSchedules() {
+    try {
+      const res = await fetch('/api/schedule');
+      if (res.ok) {
+        const data = await res.json();
+        setScheduledMeetings(data.map(s => s.id));
+      }
+    } catch (e) { }
   }
 
+  async function scheduleMeeting(meeting) {
+    setStatus('Scheduling skarya.ai Bot...');
+    try {
+      const isScheduled = scheduledMeetings.includes(meeting.id);
+      const res = await fetch(`/api/schedule${isScheduled ? `?id=${meeting.id}` : ''}`, {
+        method: isScheduled ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meeting })
+      });
+
+      if (res.ok) {
+        if (isScheduled) {
+          setScheduledMeetings(prev => prev.filter(id => id !== meeting.id));
+          setStatus('Auto-record removed.');
+        } else {
+          setScheduledMeetings(prev => [...prev, meeting.id]);
+          setStatus('Bot will join automatically when meeting starts!');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus('Failed to update schedule.');
+    }
+    setTimeout(() => setStatus(''), 3000);
+  }
+
+  async function ingestMeetingHybrid(meeting) {
+    setStatus('Initializing Hybrid Processor...');
+    try {
+      const res = await fetch('/api/process-meeting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meetingId: meeting.id,
+          joinUrl: meeting.webUrl,
+          userEmail: isLoggedIn // Simple check
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        await loadMeetings();
+        setStatus('Analysis complete.');
+      } else if (res.status === 429) {
+        setStatus('System Busy: All bots are in use. 🤖');
+        alert('The system is currently at maximum capacity. Please wait for another meeting to finish before joining.');
+      } else if (data.status === 'bot_joining') {
+        setStatus('Bot is joining the meeting... 🤖');
+        // Refresh list to show bot status
+        loadRealMeetings();
+      } else if (data.status === 'awaiting_consent') {
+        alert('Organizer consent needed for native transcript. Requesting bot fallback...');
+      } else {
+        setStatus('Processing: ' + (data.message || 'Starting...'));
+      }
+
+      setTimeout(() => setStatus(''), 5000);
+    } catch (e) {
+      console.error(e);
+      setStatus('Error starting process.');
+    }
+  }
 
   async function doUpload(e) {
     const file = e.target.files[0];
@@ -181,7 +275,7 @@ export default function MeetingAI() {
       {/* Top Navigation / Header */}
       <header className="app-header">
         <div className="app-brand">
-          <span style={{ fontSize: '20px' }}>⌯</span> MeetingAI Assistant
+          <span style={{ fontSize: '20px', color: 'var(--teams-purple)' }}>⌯</span> skarya.ai Assistant
         </div>
         <div className="app-status">
           <button onClick={toggleTheme} className="header-action-btn" title="Toggle Dark/Light Mode">
@@ -218,20 +312,77 @@ export default function MeetingAI() {
                     </button>
                   </div>
 
-                  <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #E1DFDD', borderRadius: '4px' }}>
+                  <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid #E1DFDD', borderRadius: '4px' }}>
                     {realMeetings.length === 0 ? (
                       <div style={{ padding: '8px', fontSize: '12px', color: '#666' }}>No recent meetings found.</div>
                     ) : (
                       realMeetings.map(rm => (
-                        <div key={rm.id} style={{ padding: '8px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={rm.subject}>{rm.subject}</span>
-                          <button
-                            onClick={() => ingestMeeting(rm.id)}
-                            style={{ border: 'none', background: 'transparent', color: '#6264A7', cursor: 'pointer', fontSize: '16px', padding: '0 4px' }}
-                            title="Ingest Transcript"
-                          >
-                            ⇓
-                          </button>
+                        <div key={rm.id} style={{
+                          padding: '10px 12px',
+                          borderBottom: '1px solid #f0f0f0',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: rm.access?.canIngest ? 'rgba(0, 128, 0, 0.02)' : 'transparent'
+                        }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '160px' }}>
+                            <span
+                              style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                              title={rm.subject}
+                            >
+                              {rm.subject}
+                            </span>
+                            <span style={{ fontSize: '10px', color: '#888' }}>
+                              {rm.access?.status === 'accessible' ? '🟢 Native Ready' :
+                                rm.access?.status === 'needs_permission' ? '🤖 Bot Required' :
+                                  rm.access?.status === 'bot_joining' ? '⏳ Bot Joining...' : '⚪ Check Sync'}
+                            </span>
+                            {activeSpeakers[rm.id] && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                <div className="skarya-avatar active">S</div>
+                                <span style={{ fontSize: '11px', color: '#6264A7', fontWeight: '600' }}>
+                                  {activeSpeakers[rm.id]} is speaking...
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              onClick={() => scheduleMeeting(rm)}
+                              style={{
+                                border: '1px solid #6264A7',
+                                backgroundColor: scheduledMeetings.includes(rm.id) ? '#6264A7' : 'white',
+                                color: scheduledMeetings.includes(rm.id) ? 'white' : '#6264A7',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '11px',
+                                padding: '2px 8px',
+                                fontWeight: '600'
+                              }}
+                              title={scheduledMeetings.includes(rm.id) ? 'Cancel Auto-record' : 'Schedule Auto-record'}
+                            >
+                              {scheduledMeetings.includes(rm.id) ? '⏰ SCHEDULED' : '⏰ SCHEDULE'}
+                            </button>
+
+                            <button
+                              onClick={() => ingestMeetingHybrid(rm)}
+                              disabled={rm.access?.status === 'bot_joining'}
+                              style={{
+                                border: '1px solid #6264A7',
+                                backgroundColor: rm.access?.canIngest ? '#6264A7' : 'white',
+                                color: rm.access?.canIngest ? 'white' : '#6264A7',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '11px',
+                                padding: '2px 8px',
+                                fontWeight: '600'
+                              }}
+                              title={rm.access?.status === 'needs_permission' ? 'Bot will join and record now' : 'Ingest natively'}
+                            >
+                              {rm.access?.canIngest ? 'INGEST' : 'BOT JOIN'}
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}

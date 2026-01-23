@@ -523,3 +523,54 @@ textarea:focus {
   opacity: 1;
   background-color: rgba(255, 255, 255, 0.1);
 }
+/* skarya.ai Bot Identity & Brand */
+.skarya-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6264A7 0%, #0078D4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 11px;
+  box-shadow: 0 0 10px rgba(98, 100, 167, 0.3);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.skarya-avatar::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: rotate(45deg);
+  animation: skarya-shine 3s infinite;
+}
+
+.skarya-avatar.active {
+  animation: skarya-breathe 2s infinite ease-in-out;
+  box-shadow: 0 0 15px rgba(0, 120, 212, 0.5);
+}
+
+@keyframes skarya-shine {
+  0% { left: -150%; }
+  100% { left: 150%; }
+}
+
+@keyframes skarya-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes skarya-pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+100% { opacity: 0.6; }
+}
