@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { saveScheduledRecording, getScheduledRecordings, deleteScheduledRecording } from '../../../../lib/storage-prod.js';
-import { initScheduler, tickScheduler } from '../../../../lib/scheduler.js';
+import { saveScheduledRecording, getScheduledRecordings, deleteScheduledRecording } from '../../../lib/storage-prod.js';
+import { initScheduler, tickScheduler } from '../../../lib/scheduler.js';
 
 // Initialize scheduler on first load of this API
 let initialized = false;

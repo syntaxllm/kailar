@@ -16,7 +16,7 @@ app.use(cors());
 
 const PORT = process.env.PORT || 6767;
 const MAIN_APP_URL = process.env.MAIN_APP_URL || 'http://localhost:5656';
-const STT_SERVICE_URL = process.env.STT_SERVICE_URL || 'http://localhost:8000';
+const STT_SERVICE_URL = process.env.STT_SERVICE_URL || 'http://localhost:4545';
 
 // Store active sessions by sessionId
 const sessions = new Map();
@@ -208,19 +208,37 @@ async function runBot(sessionId) {
         await page.goto(session.joinUrl, { waitUntil: 'networkidle2' });
 
         // Teams interaction...
+        // Teams Flow Resilience
         try {
-            const continueBtnSelector = 'button.open-web-button';
-            await page.waitForSelector(continueBtnSelector, { timeout: 10000 });
-            await page.click(continueBtnSelector);
-        } catch (e) { }
+            // Wait for either the "Join on the web" button or the name input directly
+            const continueBtnSelector = 'button.open-web-button, button[aria-label="Continue on this browser"]';
+            const nameInputSelector = 'input[data-tid="prejoin-display-name-input"], input[placeholder="Type your name"], input[name="displayName"]';
 
-        const nameInputSelector = 'input[data-tid="prejoin-display-name-input"], input[placeholder="Type your name"]';
-        await page.waitForSelector(nameInputSelector, { timeout: 15000 });
-        await page.type(nameInputSelector, "skarya.ai Bot");
+            const element = await page.waitForSelector(`${continueBtnSelector}, ${nameInputSelector}`, { timeout: 20000 });
+            const tagName = await element.evaluate(el => el.tagName);
 
-        const joinNowSelector = 'button[data-tid="prejoin-join-button"]';
-        await page.waitForSelector(joinNowSelector);
+            if (tagName === 'BUTTON') {
+                console.log("[Bot] Clicking 'Continue on this browser' button...");
+                await element.click();
+            }
+        } catch (e) {
+            console.log("[Bot] No 'Continue' button found, might be on name input page already.");
+        }
+
+        // Wait for Name Input
+        const nameInputSelector = 'input[data-tid="prejoin-display-name-input"], input[placeholder="Type your name"], input[name="displayName"]';
+        try {
+            await page.waitForSelector(nameInputSelector, { timeout: 15000 });
+            await page.type(nameInputSelector, "Skarya.AI Bot");
+            console.log("[Bot] Name entered.");
+        } catch (e) {
+            console.warn("[Bot] Name input not found. Trying to bypass or check if joined already.");
+        }
+
+        const joinNowSelector = 'button[data-tid="prejoin-join-button"], button.join-btn, button[aria-label="Join now"]';
+        await page.waitForSelector(joinNowSelector, { timeout: 10000 });
         await page.click(joinNowSelector);
+        console.log("[Bot] Clicked Join Now.");
 
         session.status = 'joined';
         await notifyMainApp(sessionId, 'joined', { meetingId: session.meetingId });

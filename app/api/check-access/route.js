@@ -11,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { checkTranscriptAccess, AccessStatus } from '../../../lib/ms-graph.js';
 import { checkConsent, ConsentStatus } from '../../../lib/consent-manager.js';
+import { getMeeting } from '../../../lib/storage-prod.js';
 
 export async function GET(request) {
     try {
@@ -20,6 +21,18 @@ export async function GET(request) {
 
         if (!meetingId && !joinUrl) {
             return NextResponse.json({ error: 'meetingId or joinUrl required' }, { status: 400 });
+        }
+
+        // GLOBAL SYNC: Check if meeting is already in our shared database (One-to-Many logic)
+        const existing = await getMeeting(meetingId);
+        if (existing) {
+            return NextResponse.json({
+                meetingId,
+                status: 'ingested',
+                canIngest: false,
+                isCaptured: true,
+                capturedAt: existing.importedAt
+            });
         }
 
         const cookieStore = await cookies();
@@ -34,6 +47,17 @@ export async function GET(request) {
 
         const tokenData = JSON.parse(tokenCookie.value);
         const accessToken = tokenData.access_token;
+
+        // NEW: Check if bot is currently active for this meeting
+        let botStatus = 'idle';
+        try {
+            const botSvcUrl = process.env.BOT_SERVICE_URL || 'http://localhost:6767';
+            const botCheck = await fetch(`${botSvcUrl}/status-by-meeting/${meetingId}`);
+            if (botCheck.ok) {
+                const bData = await botCheck.json();
+                botStatus = bData.status; // 'joining', 'joined', 'recording', etc.
+            }
+        } catch (e) { }
 
         // Check our consent database first
         const consent = await checkConsent(meetingId || joinUrl);
@@ -51,22 +75,13 @@ export async function GET(request) {
         let canIngest = false;
         let needsConsent = false;
 
-        if (graphAccess?.status === AccessStatus.ACCESSIBLE) {
-            finalStatus = 'accessible';
-            canIngest = true;
-        } else if (consent.status === ConsentStatus.GRANTED) {
-            // We have consent but Graph failed - might need to retry
-            finalStatus = 'consent_granted_pending';
-            canIngest = true;
-        } else if (graphAccess?.status === AccessStatus.NEEDS_PERMISSION) {
-            finalStatus = 'needs_permission';
-            needsConsent = true;
-        } else if (graphAccess?.status === AccessStatus.NOT_AVAILABLE) {
-            finalStatus = 'no_transcript';
+        if (botStatus !== 'idle' && botStatus !== 'completed' && botStatus !== 'error') {
+            finalStatus = (botStatus === 'joined' || botStatus === 'recording') ? 'recording' : 'bot_joining';
             canIngest = false;
         } else {
-            finalStatus = 'unknown';
-            needsConsent = true;
+            // Default to requiring the bot assistant
+            finalStatus = 'bot_required';
+            canIngest = false;
         }
 
         return NextResponse.json({

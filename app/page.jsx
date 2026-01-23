@@ -133,7 +133,7 @@ export default function MeetingAI() {
   }
 
   async function scheduleMeeting(meeting) {
-    setStatus('Scheduling skarya.ai Bot...');
+    setStatus('Scheduling Skarya.AI Bot...');
     try {
       const isScheduled = scheduledMeetings.includes(meeting.id);
       const res = await fetch(`/api/schedule${isScheduled ? `?id=${meeting.id}` : ''}`, {
@@ -275,7 +275,7 @@ export default function MeetingAI() {
       {/* Top Navigation / Header */}
       <header className="app-header">
         <div className="app-brand">
-          <span style={{ fontSize: '20px', color: 'var(--teams-purple)' }}>⌯</span> skarya.ai Assistant
+          <span style={{ fontSize: '20px', color: 'var(--teams-purple)' }}>⌯</span> Skarya.AI Assistant
         </div>
         <div className="app-status">
           <button onClick={toggleTheme} className="header-action-btn" title="Toggle Dark/Light Mode">
@@ -302,89 +302,80 @@ export default function MeetingAI() {
                 </button>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                    <span style={{ color: 'green' }}>✓ Connected</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '8px', height: '8px', background: '#4CAF50', borderRadius: '50%', boxShadow: '0 0 8px rgba(76, 175, 80, 0.4)' }}></div>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Live Sync Active</span>
+                    </div>
                     <button
                       onClick={() => { document.cookie = 'ms_token=; Max-Age=0'; setIsLoggedIn(false); }}
-                      style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                      style={{ background: 'var(--hover-gray)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '10px', padding: '4px 10px', borderRadius: '6px', fontWeight: '600' }}
                     >
                       Disconnect
                     </button>
                   </div>
 
-                  <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid #E1DFDD', borderRadius: '4px' }}>
+                  <div className="sidebar-scroll-area" style={{ maxHeight: '450px', overflowY: 'auto', padding: '8px 12px' }}>
                     {realMeetings.length === 0 ? (
-                      <div style={{ padding: '8px', fontSize: '12px', color: '#666' }}>No recent meetings found.</div>
+                      <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>No meetings found.</div>
                     ) : (
-                      realMeetings.map(rm => (
-                        <div key={rm.id} style={{
-                          padding: '10px 12px',
-                          borderBottom: '1px solid #f0f0f0',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          background: rm.access?.canIngest ? 'rgba(0, 128, 0, 0.02)' : 'transparent'
-                        }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '160px' }}>
-                            <span
-                              style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                              title={rm.subject}
-                            >
-                              {rm.subject}
-                            </span>
-                            <span style={{ fontSize: '10px', color: '#888' }}>
-                              {rm.access?.status === 'accessible' ? '🟢 Native Ready' :
-                                rm.access?.status === 'needs_permission' ? '🤖 Bot Required' :
-                                  rm.access?.status === 'bot_joining' ? '⏳ Bot Joining...' : '⚪ Check Sync'}
-                            </span>
+                      realMeetings.map(rm => {
+                        const isScheduled = scheduledMeetings.includes(rm.id);
+                        const isLive = new Date(rm.start) <= new Date() && new Date(rm.end) >= new Date();
+                        return (
+                          <div key={rm.id} className="meeting-item" style={{ marginBottom: '12px', padding: '16px', border: '1px solid var(--border-subtle)', borderRadius: '12px', background: 'var(--teams-panel-bg)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{rm.subject}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  {new Date(rm.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {rm.isOrganizer ? 'Organizer' : 'Subscriber'}
+                                </span>
+                                <span style={{
+                                  fontSize: '9.5px',
+                                  fontWeight: '800',
+                                  color: rm.access?.status === 'recording' ? '#e74c3c' :
+                                    rm.access?.status === 'ingested' ? '#27ae60' :
+                                      rm.access?.status === 'bot_joining' ? '#f39c12' : '#888',
+                                  marginTop: '2px',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {rm.access?.status === 'ingested' ? '✅ Captured' :
+                                    rm.access?.status === 'recording' ? '🔴 Recording Live' :
+                                      rm.access?.status === 'bot_joining' ? '⏳ Bot in Lobby' : '🤖 Bot Assistant'}
+                                </span>
+                              </div>
+                              {rm.access?.status === 'bot_joining' ? (
+                                <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: 'var(--teams-purple)' }}></div>
+                              ) : rm.access?.status === 'ingested' ? (
+                                <button
+                                  onClick={() => handleMeetingSelect(meetings.find(m => m.meetingId === rm.id) || { meetingId: rm.id, source: 'teams' })}
+                                  className="primary"
+                                  style={{ padding: '6px 14px', fontSize: '11px', borderRadius: '8px', minWidth: '94px', background: '#27ae60' }}
+                                >
+                                  VIEW
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => isLive ? ingestMeetingHybrid(rm) : scheduleMeeting(rm)}
+                                  className={isScheduled || (isLive && rm.access?.canIngest) ? 'primary' : 'secondary'}
+                                  style={{ padding: '6px 14px', fontSize: '11px', borderRadius: '8px', minWidth: '94px' }}
+                                >
+                                  {isScheduled ? 'SCHEDULED' : isLive ? 'JOIN BOT' : 'SCHEDULE'}
+                                </button>
+                              )}
+                            </div>
+
                             {activeSpeakers[rm.id] && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                                <div className="skarya-avatar active">S</div>
-                                <span style={{ fontSize: '11px', color: '#6264A7', fontWeight: '600' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', background: 'var(--chat-user-bg)', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(98, 100, 167, 0.1)' }}>
+                                <div className="skarya-avatar active" style={{ width: '22px', height: '22px', fontSize: '10px' }}>S</div>
+                                <span style={{ fontSize: '11px', color: 'var(--teams-purple)', fontWeight: '700' }}>
                                   {activeSpeakers[rm.id]} is speaking...
                                 </span>
                               </div>
                             )}
                           </div>
-
-                          <div style={{ display: 'flex', gap: '4px' }}>
-                            <button
-                              onClick={() => scheduleMeeting(rm)}
-                              style={{
-                                border: '1px solid #6264A7',
-                                backgroundColor: scheduledMeetings.includes(rm.id) ? '#6264A7' : 'white',
-                                color: scheduledMeetings.includes(rm.id) ? 'white' : '#6264A7',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                                padding: '2px 8px',
-                                fontWeight: '600'
-                              }}
-                              title={scheduledMeetings.includes(rm.id) ? 'Cancel Auto-record' : 'Schedule Auto-record'}
-                            >
-                              {scheduledMeetings.includes(rm.id) ? '⏰ SCHEDULED' : '⏰ SCHEDULE'}
-                            </button>
-
-                            <button
-                              onClick={() => ingestMeetingHybrid(rm)}
-                              disabled={rm.access?.status === 'bot_joining'}
-                              style={{
-                                border: '1px solid #6264A7',
-                                backgroundColor: rm.access?.canIngest ? '#6264A7' : 'white',
-                                color: rm.access?.canIngest ? 'white' : '#6264A7',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                                padding: '2px 8px',
-                                fontWeight: '600'
-                              }}
-                              title={rm.access?.status === 'needs_permission' ? 'Bot will join and record now' : 'Ingest natively'}
-                            >
-                              {rm.access?.canIngest ? 'INGEST' : 'BOT JOIN'}
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
