@@ -1,49 +1,50 @@
 /**
  * Bot Webhook API
  * 
- * Receives events from the external Bot Service:
- * - Bot joined meeting
- * - Recording started/stopped
- * - Transcript ready
+ * Receives events from the external Bot Service
  * 
  * POST /api/bot/webhook
  */
 
 import { NextResponse } from 'next/server';
 import { handleBotWebhook } from '../../../../lib/bot-service.js';
-import { completeBotSession } from '../../../../lib/hybrid-processor.js';
+import { fetchTranscriptPostMeeting } from '../../../../lib/hybrid-processor.js';
 
 export async function POST(request) {
     try {
         const event = await request.json();
 
-        console.log(`📥 Bot webhook received: ${event.type}`);
+        console.log(`📥 Bot webhook: ${event.type}`);
 
-        // Validate webhook (in production, verify signature)
         if (!event.type || !event.sessionId) {
-            return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 });
+            return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
         }
 
-        // Handle the event
         const result = await handleBotWebhook(event);
 
-        // Special handling for transcript_ready - trigger ingestion
-        if (event.type === 'transcript_ready' && event.data?.transcript) {
-            const meetingId = event.data.meetingId || event.sessionId;
+        // When meeting ends, fetch transcript
+        if (event.type === 'meeting_ended' || event.type === 'transcript_ready') {
+            const { sessionId, data } = event;
+            const meetingId = data?.meetingId || sessionId;
+            const mode = data?.mode || 'bot_recording';
+            const accessToken = data?.accessToken || null;
+            const joinUrl = data?.joinUrl || null;
 
-            // Complete the session and ingest transcript
-            const ingestionResult = await completeBotSession(event.sessionId, meetingId);
+            // Trigger transcript fetch
+            const fetchResult = await fetchTranscriptPostMeeting(
+                sessionId,
+                meetingId,
+                mode,
+                accessToken,
+                joinUrl
+            );
 
-            if (ingestionResult.success) {
-                console.log(`✅ Transcript ingested for meeting: ${meetingId}`);
-            } else {
-                console.error(`❌ Ingestion failed: ${ingestionResult.error}`);
-            }
+            console.log(`📄 Transcript fetch result:`, fetchResult);
         }
 
         return NextResponse.json(result);
     } catch (error) {
-        console.error('Bot webhook error:', error);
+        console.error('Webhook error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
