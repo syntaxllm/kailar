@@ -22,6 +22,28 @@ export async function POST(request) {
 
         const result = await handleBotWebhook(event);
 
+        // UPDATE UI STATE (InMemory)
+        if (!global.activeSessions) global.activeSessions = new Map();
+
+        if (global.activeSessions) {
+            const current = global.activeSessions.get(event.sessionId);
+            if (current || event.type === 'joined') {
+                const newState = current || {
+                    id: event.sessionId,
+                    meetingId: event.data?.meetingId,
+                    startedAt: new Date().toISOString()
+                };
+
+                if (event.type === 'joined') newState.status = 'joining';
+                if (event.type === 'recording_started') newState.status = 'recording';
+                if (event.type === 'meeting_ended' || event.type === 'error') {
+                    global.activeSessions.delete(event.sessionId);
+                } else {
+                    global.activeSessions.set(event.sessionId, newState);
+                }
+            }
+        }
+
         // When meeting ends, fetch transcript
         if (event.type === 'meeting_ended' || event.type === 'transcript_ready') {
             const { sessionId, data } = event;

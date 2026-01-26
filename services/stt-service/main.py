@@ -8,7 +8,12 @@ from faster_whisper import WhisperModel
 # from pyannote.audio import Pipeline # Will need token
 import uuid
 
+import sys
+
 app = FastAPI(title="MeetingAI STT Service")
+
+print(f"🚀 STT Service Starting on Python {sys.version}")
+
 
 # Load Whisper Model
 # Using 'base' or 'small' for dev to be fast

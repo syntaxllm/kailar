@@ -375,23 +375,50 @@ async function handleMeetingEnd(sessionId) {
 
     if (session.status === 'recording') {
         session.status = 'processing';
+        if (session.chunkInterval) clearInterval(session.chunkInterval); // Ensure interval is cleared
 
         try {
-            const samplePath = path.join(__dirname, 'sample.wav');
-            if (fs.existsSync(samplePath)) {
+            // Locate recorded chunks
+            const meetingDir = path.join(__dirname, 'temp', sessionId);
+            let audioToProcess = null;
+
+            if (fs.existsSync(meetingDir)) {
+                const files = fs.readdirSync(meetingDir).filter(f => f.endsWith('.wav'));
+                if (files.length > 0) {
+                    // For now, take the last chunk or the largest one. 
+                    // Ideally, we'd stitch them, but for this MVP, we process the last valid chunk 
+                    // or a specific merged file if we had stitching logic.
+                    // Let's grab the file with the largest size aka most content
+                    const sortedFiles = files.map(file => {
+                        const filePath = path.join(meetingDir, file);
+                        return { name: file, path: filePath, size: fs.statSync(filePath).size };
+                    }).sort((a, b) => b.size - a.size); // Descending size
+
+                    audioToProcess = sortedFiles[0].path;
+                    console.log(`[Bot] Selected audio for processing: ${audioToProcess} (${(sortedFiles[0].size / 1024 / 1024).toFixed(2)} MB)`);
+                }
+            }
+
+            // Fallback to sample.wav only if no real audio
+            if (!audioToProcess) {
+                const samplePath = path.join(__dirname, 'sample.wav');
+                if (fs.existsSync(samplePath)) {
+                    audioToProcess = samplePath;
+                    console.log("[Bot] No recorded audio found. Using sample.wav fallback.");
+                }
+            }
+
+            if (audioToProcess) {
                 // Pass speaker log so STT knows the real names
-                const sttResult = await processAudioThroughSTT(sessionId, samplePath, session.speakerLog);
+                const sttResult = await processAudioThroughSTT(sessionId, audioToProcess, session.speakerLog);
                 session.transcript = sttResult.transcript;
                 session.duration = sttResult.duration;
             } else {
-                console.log("[Bot] No sample.wav, simulating transcript with real names...");
-
-                // Use the first name we saw in the monitor, or fallback
-                const realName = session.speakerLog[0]?.name || "Pranav Patil";
-
+                console.log("[Bot] No audio source found (real or sample). Simulating transcript.");
+                const realName = session.speakerLog?.[0]?.name || "Unknown Speaker";
                 session.transcript = [
                     { start_time: 0, end_time: 5, speaker_id: realName, text: "Welcome to the engineering sync." },
-                    { start_time: 5, end_time: 10, speaker_id: "System", text: "Recording is active and following exact names." }
+                    { start_time: 5, end_time: 10, speaker_id: "System", text: "No audio was recorded." }
                 ];
             }
 
@@ -401,10 +428,10 @@ async function handleMeetingEnd(sessionId) {
             });
 
             // Clean up temp audio files
-            const meetingDir = path.join(__dirname, 'temp', sessionId);
             if (fs.existsSync(meetingDir)) {
-                fs.rmSync(meetingDir, { recursive: true, force: true });
-                console.log(`[Bot] Cleaned up temp files for ${sessionId}`);
+                // fs.rmSync(meetingDir, { recursive: true, force: true });
+                // console.log(`[Bot] Cleaned up temp files for ${sessionId}`);
+                console.log(`[Bot] Keeping temp files for debugging: ${meetingDir}`);
             }
 
         } catch (e) {
@@ -414,6 +441,8 @@ async function handleMeetingEnd(sessionId) {
     }
 
     if (session.browser) await session.browser.close();
+
+    // Keep session in memory but marked as completed so we can retrieve transcript
     session.status = 'completed';
 }
 

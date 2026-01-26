@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 faster-whisper
-pyannote.audio
+
 torch
 torchaudio
 python-multipart

@@ -230,13 +230,13 @@ taskkill /PID <PID_NUMBER> /F
 
 ## 🚧 Roadmap (FUTURE Phase)
 
-- [ ] **Microsoft 365 Integration** - Direct Teams connection
-- [ ] **Recording Transcription** - MP4/audio to VTT conversion
+- [x] **Microsoft 365 Integration** - Direct Teams connection
+- [x] **Recording Transcription** - MP4/audio to VTT conversion
 - [ ] **Vector Search** - Semantic search with embeddings
-- [ ] **MongoDB Atlas** - Production-ready database
+- [x] **MongoDB Atlas** - Production-ready database
 - [ ] **Speaker Diarization** - Auto-identify speakers
 - [ ] **Multi-language Support** - Translate transcripts
-- [ ] **Calendar Integration** - Auto-import scheduled meetings
+- [x] **Calendar Integration** - Auto-import scheduled meetings
 - [ ] **Export Features** - PDF reports, CSV action items
 
 ---
