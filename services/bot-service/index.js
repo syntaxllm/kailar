@@ -226,13 +226,31 @@ async function runBot(sessionId) {
         }
 
         // Wait for Name Input
+        // 2a. Turn OFF Camera (to avoid fake rainbow video)
+        try {
+            const camToggleSelector = 'div[data-tid="toggle-video"] > [aria-checked="true"]';
+            // If we find a checked toggle, click it to uncheck (turn off)
+            const camToggle = await page.$(camToggleSelector);
+            if (camToggle) {
+                await camToggle.click();
+                console.log("[Bot] Camera turned OFF.");
+            }
+        } catch (e) {
+            console.log("[Bot] Could not toggle camera off (might be already off).");
+        }
+
+        // 3. Enter Name
+        const botName = process.env.BOT_NAME || "Skarya Bot";
         const nameInputSelector = 'input[data-tid="prejoin-display-name-input"], input[placeholder="Type your name"], input[name="displayName"]';
         try {
             await page.waitForSelector(nameInputSelector, { timeout: 15000 });
-            await page.type(nameInputSelector, "Skarya.AI Bot");
-            console.log("[Bot] Name entered.");
+
+            // Clear input first just in case
+            await page.click(nameInputSelector, { clickCount: 3 });
+            await page.type(nameInputSelector, botName);
+            console.log(`[Bot] Name entered: ${botName}`);
         } catch (e) {
-            console.warn("[Bot] Name input not found. Trying to bypass or check if joined already.");
+            console.warn("[Bot] Name input not found.");
         }
 
         const joinNowSelector = 'button[data-tid="prejoin-join-button"], button.join-btn, button[aria-label="Join now"]';
@@ -242,6 +260,26 @@ async function runBot(sessionId) {
 
         session.status = 'joined';
         await notifyMainApp(sessionId, 'joined', { meetingId: session.meetingId });
+
+        // Monitoring Loop for Kicked Status
+        page.on('close', async () => {
+            console.log("[Bot] Page closed.");
+            await notifyMainApp(sessionId, 'bot_kicked', { reason: 'Page Closed' });
+        });
+
+        // Check for specific "Removed" text occasionally
+        const checkKickedInterval = setInterval(async () => {
+            try {
+                if (page.isClosed()) { clearInterval(checkKickedInterval); return; }
+                const content = await page.content();
+                if (content.includes("You have been removed from the meeting") || content.includes("You've been removed")) {
+                    console.log("[Bot] Kicked from meeting.");
+                    await notifyMainApp(sessionId, 'bot_kicked', { reason: 'Removed by organizer' });
+                    clearInterval(checkKickedInterval);
+                    await browser.close();
+                }
+            } catch (e) { }
+        }, 5000);
 
         // NEW: Real-time Name Monitoring
         monitorSpeakers(page, sessionId);

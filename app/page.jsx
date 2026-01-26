@@ -459,8 +459,9 @@ export default function SkaryaAI() {
                   {activeSessions.map(session => (
                     <div key={session.id} className="session-card">
                       <div className="session-status">
-                        <span className="pulse"></span>
-                        {session.status === 'joining' ? 'Joining...' : 'Recording'}
+                        <span className={`pulse ${session.status === 'kicked' ? 'error' : ''}`}></span>
+                        {session.status === 'joining' ? 'Joining...' :
+                          session.status === 'kicked' ? 'Kicked from Meeting' : 'Recording'}
                       </div>
                       <div className="session-info">
                         <span className="session-title">{session.title || session.id}</span>

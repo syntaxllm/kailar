@@ -1598,3 +1598,26 @@ button.full-width {
         font-size: var(--f-xl);
     }
 }
+/* Pulse Error State */
+.pulse.error {
+    background: #ff4d4d;
+    box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7);
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(255, 77, 77, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+    }
+}
