@@ -1,594 +1,643 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 
-export default function MeetingAI() {
-  const [meetings, setMeetings] = useState([]);
-  const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const [view, setView] = useState('overview');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState('');
-  const [summary, setSummary] = useState(null);
-  const [actionItems, setActionItems] = useState(null);
-  const [status, setStatus] = useState('');
-  const [realMeetings, setRealMeetings] = useState([]);
+export default function SkaryaAI() {
+  // State
+  const [tab, setTab] = useState('bot');
+  const [recordings, setRecordings] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [view, setView] = useState('transcript');
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [scheduled, setScheduled] = useState([]);
+  const [botStatus, setBotStatus] = useState({});
+
+  const [summary, setSummary] = useState(null);
+  const [actions, setActions] = useState(null);
+  const [chat, setChat] = useState([]);
+  const [input, setInput] = useState('');
+
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState('light');
-  const [activeSpeakers, setActiveSpeakers] = useState({});
-  const [scheduledMeetings, setScheduledMeetings] = useState([]); // [meetingId, ...]
-  const chatEndRef = useRef(null);
 
+  // Modal state
+  const [participantsModal, setParticipantsModal] = useState(null);
+
+  const chatEnd = useRef(null);
+
+  // Init
   useEffect(() => {
-    loadMeetings();
-    checkLogin();
-    loadSchedules();
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    const t = localStorage.getItem('theme') || 'light';
+    setTheme(t);
+    document.documentElement.setAttribute('data-theme', t);
 
-    // REAL-TIME UX: Poll for active meeting status (speakers)
-    const interval = setInterval(pollActiveBots, 3000);
-    return () => clearInterval(interval);
+    checkAuth();
+    loadRecordings();
+    loadScheduled();
   }, []);
 
-  async function pollActiveBots() {
-    // Only poll if we have meetings that are in 'bot_joining' state
-    const botsToPoll = realMeetings.filter(m => m.access?.status === 'bot_joining' || m.access?.status === 'recording');
-    if (botsToPoll.length === 0) return;
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEnd.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat]);
 
-    for (const m of botsToPoll) {
-      // We'd need the sessionId from the initial response. 
-      // For now, let's assume we can query by meetingId if the bot-service supports it, 
-      // OR we use the check-access which we'll update to include bot session info.
+  // Auth
+  async function checkAuth() {
+    const hasToken = document.cookie.includes('ms_token');
+    setIsLoggedIn(hasToken);
+    if (hasToken) {
+      loadUpcoming();
       try {
-        const res = await fetch(`/api/bot/status?meetingId=${m.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.currentSpeaker) {
-            setActiveSpeakers(prev => ({ ...prev, [m.id]: data.currentSpeaker }));
-          }
-        }
+        const res = await fetch('/api/user/profile');
+        if (res.ok) setUser(await res.json());
       } catch (e) { }
     }
   }
 
-  useEffect(() => {
-    if (view === 'chat' && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages, view]);
+  function logout() {
+    document.cookie = 'ms_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    window.location.reload();
+  }
 
-  async function handleDeleteMeeting(id) {
-    if (!confirm('Are you sure you want to delete this meeting? This cannot be undone.')) return;
-
+  // Data
+  async function loadRecordings() {
     try {
-      const res = await fetch(`/api/meetings/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setMeetings(prev => prev.filter(m => m.meetingId !== id));
-        if (selectedMeeting?.meetingId === id) {
-          setSelectedMeeting(null);
-          setView('welcome');
-        }
-      } else {
-        alert('Failed to delete meeting');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Delete failed');
-    }
+      const res = await fetch('/api/transcripts');
+      setRecordings(await res.json() || []);
+    } catch (e) { }
   }
 
-  async function loadMeetings() {
-    const res = await fetch('/api/transcripts');
-    const data = await res.json();
-    setMeetings(data || []);
-  }
-
-
-
-  function checkLogin() {
-    const hasToken = document.cookie.includes('ms_token');
-    setIsLoggedIn(hasToken);
-    if (hasToken) loadRealMeetings();
-  }
-
-  async function loadRealMeetings() {
-    setStatus('Syncing Teams meetings...');
+  async function loadUpcoming() {
+    setLoading(true);
+    setStatus('Syncing calendar...');
     try {
       const res = await fetch('/api/teams/recent');
-      if (res.ok) {
-        const data = await res.json();
-        const meetingsList = Array.isArray(data) ? data : [];
-
-        // Enrich meetings with access status
-        const enriched = await Promise.all(meetingsList.map(async (m) => {
-          try {
-            const checkRes = await fetch(`/api/check-access?meetingId=${encodeURIComponent(m.id)}&joinUrl=${encodeURIComponent(m.webUrl || '')}`);
-            const checkData = await checkRes.json();
-            return { ...m, access: checkData };
-          } catch (e) {
-            return { ...m, access: { status: 'unknown' } };
-          }
-        }));
-
-        setRealMeetings(enriched);
-        setStatus('');
-      } else {
-        const err = await res.json();
-        setStatus('Sync failed: ' + (err.error || res.statusText));
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus('Network error syncing meetings.');
-    }
+      if (res.ok) setUpcoming(await res.json() || []);
+    } catch (e) { }
+    setStatus('');
+    setLoading(false);
   }
 
-  async function loadSchedules() {
+  async function loadScheduled() {
     try {
       const res = await fetch('/api/schedule');
       if (res.ok) {
         const data = await res.json();
-        setScheduledMeetings(data.map(s => s.id));
+        setScheduled(data.map(s => s.id));
       }
     } catch (e) { }
   }
 
-  async function scheduleMeeting(meeting) {
-    setStatus('Scheduling Skarya.AI Bot...');
-    try {
-      const isScheduled = scheduledMeetings.includes(meeting.id);
-      const res = await fetch(`/api/schedule${isScheduled ? `?id=${meeting.id}` : ''}`, {
-        method: isScheduled ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meeting })
-      });
+  // Bot Actions
+  async function launchBot(meeting) {
+    setStatus('Deploying bot...');
+    setBotStatus(p => ({ ...p, [meeting.id]: { status: 'joining' } }));
 
-      if (res.ok) {
-        if (isScheduled) {
-          setScheduledMeetings(prev => prev.filter(id => id !== meeting.id));
-          setStatus('Auto-record removed.');
-        } else {
-          setScheduledMeetings(prev => [...prev, meeting.id]);
-          setStatus('Bot will join automatically when meeting starts!');
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus('Failed to update schedule.');
-    }
-    setTimeout(() => setStatus(''), 3000);
-  }
-
-  async function ingestMeetingHybrid(meeting) {
-    setStatus('Initializing Hybrid Processor...');
     try {
       const res = await fetch('/api/process-meeting', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meetingId: meeting.id,
-          joinUrl: meeting.webUrl,
-          userEmail: isLoggedIn // Simple check
-        })
+        body: JSON.stringify({ meetingId: meeting.id, joinUrl: meeting.webUrl || meeting.joinUrl })
       });
-
       const data = await res.json();
-
-      if (data.status === 'success') {
-        await loadMeetings();
-        setStatus('Analysis complete.');
-      } else if (res.status === 429) {
-        setStatus('System Busy: All bots are in use. 🤖');
-        alert('The system is currently at maximum capacity. Please wait for another meeting to finish before joining.');
-      } else if (data.status === 'bot_joining') {
-        setStatus('Bot is joining the meeting... 🤖');
-        // Refresh list to show bot status
-        loadRealMeetings();
-      } else if (data.status === 'awaiting_consent') {
-        alert('Organizer consent needed for native transcript. Requesting bot fallback...');
-      } else {
-        setStatus('Processing: ' + (data.message || 'Starting...'));
+      if (data.status === 'bot_joining') {
+        setBotStatus(p => ({ ...p, [meeting.id]: { status: 'joining', logs: ['Connecting to Teams...'] } }));
       }
+    } catch (e) { }
 
-      setTimeout(() => setStatus(''), 5000);
-    } catch (e) {
-      console.error(e);
-      setStatus('Error starting process.');
-    }
+    setTimeout(() => setStatus(''), 3000);
   }
 
-  async function doUpload(e) {
+  async function toggleSchedule(meeting) {
+    const isOn = scheduled.includes(meeting.id);
+    try {
+      await fetch(`/api/schedule${isOn ? `?id=${meeting.id}` : ''}`, {
+        method: isOn ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meeting })
+      });
+      setScheduled(p => isOn ? p.filter(id => id !== meeting.id) : [...p, meeting.id]);
+    } catch (e) { }
+  }
+
+  async function upload(e) {
     const file = e.target.files[0];
     if (!file) return;
-    setStatus('Uploading file...');
+    setStatus('Uploading...');
     const fd = new FormData();
     fd.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
-    const data = await res.json();
-    if (data.success) {
-      await loadMeetings();
-      setStatus('Uploaded successfully.');
-      setTimeout(() => setStatus(''), 3000);
-    } else {
-      setStatus('Upload error: ' + data.error);
-    }
-  }
-
-  async function getSummary() {
-    if (!summary) {
-      setStatus('Generating AI summary...');
-      const res = await fetch(`/api/summary/${selectedMeeting.meetingId}`);
-      setSummary(await res.json());
-      setStatus('');
-    }
-  }
-
-  async function getActions() {
-    if (!actionItems) {
-      setStatus('Extracting action items...');
-      const res = await fetch(`/api/actions/${selectedMeeting.meetingId}`);
-      setActionItems(await res.json());
-      setStatus('');
-    }
-  }
-
-  async function sendChat() {
-    if (!chatInput) return;
-    const msg = { role: 'user', content: chatInput };
-    setChatMessages([...chatMessages, msg]);
-    setChatInput('');
-    setStatus('AI is thinking...');
     try {
-      const res = await fetch(`/api/chat/${selectedMeeting.meetingId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: chatInput, chatHistory: chatMessages })
-      });
-      const data = await res.json();
-      if (data.error) {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
-      } else {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: data.answer, sources: data.sources }]);
-      }
-    } catch (error) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: `An unexpected error occurred: ${error.message}` }]);
-    }
+      await fetch('/api/upload', { method: 'POST', body: fd });
+      await loadRecordings();
+    } catch (e) { }
     setStatus('');
   }
 
-  const handleMeetingSelect = (m) => {
-    setSelectedMeeting(m);
-    setView('overview');
-    setChatMessages([]);
+  async function deleteMeeting(id) {
+    if (!confirm('Delete this recording?')) return;
+    try {
+      await fetch(`/api/meetings/${id}`, { method: 'DELETE' });
+      setRecordings(p => p.filter(m => m.meetingId !== id));
+      if (selected?.meetingId === id) setSelected(null);
+    } catch (e) { }
+  }
+
+  // AI Features
+  async function loadSummary() {
+    if (!selected || summary) return;
+    setStatus('Generating summary...');
+    try {
+      const res = await fetch(`/api/summary/${selected.meetingId}`);
+      setSummary(await res.json());
+    } catch (e) { }
+    setStatus('');
+  }
+
+  async function loadActions() {
+    if (!selected || actions) return;
+    setStatus('Extracting actions...');
+    try {
+      const res = await fetch(`/api/actions/${selected.meetingId}`);
+      setActions(await res.json());
+    } catch (e) { }
+    setStatus('');
+  }
+
+  async function sendMessage() {
+    if (!input.trim() || !selected) return;
+    const msg = input;
+    setChat(p => [...p, { role: 'user', content: msg }]);
+    setInput('');
+
+    try {
+      const res = await fetch(`/api/chat/${selected.meetingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: msg, chatHistory: chat })
+      });
+      const data = await res.json();
+      setChat(p => [...p, { role: 'assistant', content: data.answer || 'No response' }]);
+    } catch (e) {
+      setChat(p => [...p, { role: 'assistant', content: 'Error occurred' }]);
+    }
+  }
+
+  function selectRecording(m) {
+    setSelected(m);
+    setTab('assistant');
+    setView('transcript');
     setSummary(null);
-    setActionItems(null);
+    setActions(null);
+    setChat([]);
+  }
+
+  function toggleTheme() {
+    const t = theme === 'light' ? 'dark' : 'light';
+    setTheme(t);
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+  }
+
+  // Time Formatting - Correct handling
+  function formatDate(isoString) {
+    if (!isoString) return '—';
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+    });
+  }
+
+  function formatTime(isoString) {
+    if (!isoString) return '—';
+    const date = new Date(isoString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  function formatDuration(startIso, endIso) {
+    if (!startIso || !endIso) return '';
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    const mins = Math.round((end - start) / 60000);
+    if (mins < 60) return `${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    const remainMins = mins % 60;
+    return remainMins > 0 ? `${hrs}h ${remainMins}m` : `${hrs}h`;
+  }
+
+  function isLive(m) {
+    const now = new Date();
+    const start = new Date(m.startLocal || m.start);
+    const end = new Date(m.endLocal || m.end);
+    return now >= start && now <= end;
+  }
+
+  function getTimeUntil(isoString) {
+    if (!isoString) return '';
+    const now = new Date();
+    const target = new Date(isoString);
+    const diff = target - now;
+
+    if (diff < 0) return 'Started';
+
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `In ${mins} min`;
+
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `In ${hrs}h`;
+
+    const days = Math.floor(hrs / 24);
+    return `In ${days}d`;
+  }
+
+  function getMeetingStatus(m) {
+    if (botStatus[m.id]?.status === 'recording') return 'recording';
+    if (botStatus[m.id]?.status === 'joining') return 'joining';
+    if (isLive(m)) return 'live';
+    if (scheduled.includes(m.id)) return 'scheduled';
+    return 'upcoming';
+  }
+
+  // Icons (SVG-based, no emoji)
+  const Icons = {
+    bot: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><line x1="12" y1="7" x2="12" y2="11" /><circle cx="8" cy="16" r="1" /><circle cx="16" cy="16" r="1" /></svg>,
+    sparkle: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>,
+    calendar: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
+    clock: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg>,
+    user: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
+    users: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+    link: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+    folder: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>,
+    file: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>,
+    check: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20,6 9,17 4,12" /></svg>,
+    message: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+    refresh: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23,4 23,10 17,10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>,
+    moon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>,
+    sun: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>,
+    x: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  };
-
+  // Render
   return (
     <div className="app-container">
-      {/* Top Navigation / Header */}
-      <header className="app-header">
-        <div className="app-brand">
-          <span style={{ fontSize: '20px', color: 'var(--teams-purple)' }}>⌯</span> Skarya.AI Assistant
-        </div>
-        <div className="app-status">
-          <button onClick={toggleTheme} className="header-action-btn" title="Toggle Dark/Light Mode">
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
-          {status && <span>{status}</span>}
-        </div>
-      </header>
-
-      <div className="main-layout">
-        {/* Left Sidebar */}
-        <div className="sidebar">
-          {/* Teams Sync Section */}
-          <div className="sidebar-section">
-            <div className="sidebar-title">Microsoft Teams Sync</div>
-            <div style={{ padding: '0 16px' }}>
-              {!isLoggedIn ? (
-                <button
-                  onClick={() => window.location.href = '/api/auth/login'}
-                  className="primary"
-                  style={{ width: '100%', fontSize: '13px' }}
-                >
-                  Connect Teams
-                </button>
+      {/* Participants Modal */}
+      {participantsModal && (
+        <div className="modal-overlay" onClick={() => setParticipantsModal(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Participants</h3>
+              <button className="modal-close" onClick={() => setParticipantsModal(null)}>{Icons.x}</button>
+            </div>
+            <div className="modal-body">
+              {participantsModal.attendees?.length > 0 ? (
+                <ul className="participants-list">
+                  {participantsModal.attendees.map((p, i) => (
+                    <li key={i} className="participant-item">
+                      <div className="participant-avatar">{p.name.charAt(0).toUpperCase()}</div>
+                      <div className="participant-info">
+                        <span className="participant-name">{p.name}</span>
+                        <span className="participant-email">{p.email}</span>
+                      </div>
+                      <span className={`participant-status ${p.status}`}>
+                        {p.status === 'accepted' ? 'Accepted' :
+                          p.status === 'declined' ? 'Declined' :
+                            p.status === 'tentative' ? 'Tentative' : 'Pending'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '8px', height: '8px', background: '#4CAF50', borderRadius: '50%', boxShadow: '0 0 8px rgba(76, 175, 80, 0.4)' }}></div>
-                      <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>Live Sync Active</span>
-                    </div>
-                    <button
-                      onClick={() => { document.cookie = 'ms_token=; Max-Age=0'; setIsLoggedIn(false); }}
-                      style={{ background: 'var(--hover-gray)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '10px', padding: '4px 10px', borderRadius: '6px', fontWeight: '600' }}
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-
-                  <div className="sidebar-scroll-area" style={{ maxHeight: '450px', overflowY: 'auto', padding: '8px 12px' }}>
-                    {realMeetings.length === 0 ? (
-                      <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>No meetings found.</div>
-                    ) : (
-                      realMeetings.map(rm => {
-                        const isScheduled = scheduledMeetings.includes(rm.id);
-                        const isLive = new Date(rm.start) <= new Date() && new Date(rm.end) >= new Date();
-                        return (
-                          <div key={rm.id} className="meeting-item" style={{ marginBottom: '12px', padding: '16px', border: '1px solid var(--border-subtle)', borderRadius: '12px', background: 'var(--teams-panel-bg)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{rm.subject}</span>
-                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                  {new Date(rm.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {rm.isOrganizer ? 'Organizer' : 'Subscriber'}
-                                </span>
-                                <span style={{
-                                  fontSize: '9.5px',
-                                  fontWeight: '800',
-                                  color: rm.access?.status === 'recording' ? '#e74c3c' :
-                                    rm.access?.status === 'ingested' ? '#27ae60' :
-                                      rm.access?.status === 'bot_joining' ? '#f39c12' : '#888',
-                                  marginTop: '2px',
-                                  textTransform: 'uppercase'
-                                }}>
-                                  {rm.access?.status === 'ingested' ? '✅ Captured' :
-                                    rm.access?.status === 'recording' ? '🔴 Recording Live' :
-                                      rm.access?.status === 'bot_joining' ? '⏳ Bot in Lobby' : '🤖 Bot Assistant'}
-                                </span>
-                              </div>
-                              {rm.access?.status === 'bot_joining' ? (
-                                <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: 'var(--teams-purple)' }}></div>
-                              ) : rm.access?.status === 'ingested' ? (
-                                <button
-                                  onClick={() => handleMeetingSelect(meetings.find(m => m.meetingId === rm.id) || { meetingId: rm.id, source: 'teams' })}
-                                  className="primary"
-                                  style={{ padding: '6px 14px', fontSize: '11px', borderRadius: '8px', minWidth: '94px', background: '#27ae60' }}
-                                >
-                                  VIEW
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => isLive ? ingestMeetingHybrid(rm) : scheduleMeeting(rm)}
-                                  className={isScheduled || (isLive && rm.access?.canIngest) ? 'primary' : 'secondary'}
-                                  style={{ padding: '6px 14px', fontSize: '11px', borderRadius: '8px', minWidth: '94px' }}
-                                >
-                                  {isScheduled ? 'SCHEDULED' : isLive ? 'JOIN BOT' : 'SCHEDULE'}
-                                </button>
-                              )}
-                            </div>
-
-                            {activeSpeakers[rm.id] && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', background: 'var(--chat-user-bg)', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(98, 100, 167, 0.1)' }}>
-                                <div className="skarya-avatar active" style={{ width: '22px', height: '22px', fontSize: '10px' }}>S</div>
-                                <span style={{ fontSize: '11px', color: 'var(--teams-purple)', fontWeight: '700' }}>
-                                  {activeSpeakers[rm.id]} is speaking...
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+                <p className="no-participants">No participant information available</p>
               )}
             </div>
           </div>
+        </div>
+      )}
 
-          <div style={{ borderBottom: '1px solid #E1DFDD', margin: '8px 0' }}></div>
-
-          {/* Local / Ingested Meetings List */}
-          <div className="sidebar-section" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div className="sidebar-title">Recorded Meetings</div>
-            <div className="meeting-list">
-              {meetings.map(m => (
-                <div
-                  key={m.meetingId}
-                  className={`meeting-item ${selectedMeeting?.meetingId === m.meetingId ? 'active' : ''}`}
-                  onClick={() => handleMeetingSelect(m)}
-                >
-                  <div className="meeting-item-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="meeting-item-title">{m.meetingId}</div>
-                    <button
-                      className="delete-btn"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteMeeting(m.meetingId); }}
-                      style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '14px', position: 'absolute', right: '10px', top: '10px' }}
-                      title="Delete Meeting"
-                    >
-                      ✘
-                    </button>
-                  </div>
-                  <div className="meeting-item-meta">
-                    {m.entries?.length || 0} segments • {new Date(m.importedAt || Date.now()).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ padding: '16px', borderTop: '1px solid #E1DFDD' }}>
-              <button
-                className="secondary"
-                style={{ width: '100%', marginBottom: '8px', fontSize: '12px' }}
-                onClick={() => document.getElementById('file-upload').click()}
-              >
-                Upload Transcript
-              </button>
-              <input id="file-upload" type="file" onChange={doUpload} style={{ display: 'none' }} />
-
-
-            </div>
+      {/* Header */}
+      <header className="app-header">
+        <div className="header-left">
+          <div className="brand" onClick={() => { setSelected(null); setTab('bot'); }}>
+            <span className="brand-icon">◆</span>
+            <span className="brand-name">Skarya.AI</span>
           </div>
+
+          <nav className="main-nav">
+            <button className={`nav-tab ${tab === 'bot' ? 'active' : ''}`} onClick={() => setTab('bot')}>
+              {Icons.bot}
+              <span>Bot Operations</span>
+            </button>
+            <button className={`nav-tab ${tab === 'assistant' ? 'active' : ''}`} onClick={() => setTab('assistant')}>
+              {Icons.sparkle}
+              <span>AI Assistant</span>
+            </button>
+          </nav>
         </div>
 
-        {/* Main Content Stage */}
-        <div className="content-stage">
-          {selectedMeeting ? (
-            <>
-              <div className="stage-header">
-                <div className="stage-title">{selectedMeeting.meetingId}</div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '16px' }}>
-                  Source: {selectedMeeting.source} | Duration: {selectedMeeting.durationSeconds || 'Unknown'}s
+        <div className="header-right">
+          {status && <span className="status-badge">{status}</span>}
+
+          <button onClick={toggleTheme} className="icon-btn" title={theme === 'light' ? 'Dark mode' : 'Light mode'}>
+            {theme === 'light' ? Icons.moon : Icons.sun}
+          </button>
+
+          {!isLoggedIn ? (
+            <button className="primary" onClick={() => window.location.href = '/api/auth/login'}>
+              Connect Teams
+            </button>
+          ) : (
+            <div className="user-pill">
+              <div className="user-info">
+                <span className="user-name">{user?.displayName || 'User'}</span>
+                <span className="user-email">{user?.mail || ''}</span>
+              </div>
+              <button onClick={logout} className="logout-btn">Logout</button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="main-content">
+        {/* Bot Operations Tab */}
+        {tab === 'bot' && (
+          <div className="bot-operations">
+            {!isLoggedIn ? (
+              <div className="connect-prompt">
+                <div className="prompt-icon">{Icons.link}</div>
+                <h2>Connect Microsoft Teams</h2>
+                <p>Link your account to view upcoming meetings and deploy the recording bot.</p>
+                <button className="primary large" onClick={() => window.location.href = '/api/auth/login'}>
+                  Connect Teams
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="section-header">
+                  <div>
+                    <h1>Upcoming Meetings</h1>
+                    <p className="subtitle">Next 7 days from your Teams calendar</p>
+                  </div>
+                  <button className="secondary" onClick={loadUpcoming} disabled={loading}>
+                    {Icons.refresh}
+                    <span>{loading ? 'Syncing...' : 'Refresh'}</span>
+                  </button>
                 </div>
 
-                <div className="tabs">
-                  <button className={`tab-btn ${view === 'overview' ? 'active' : ''}`} onClick={() => setView('overview')}>Transcript</button>
-                  <button className={`tab-btn ${view === 'summary' ? 'active' : ''}`} onClick={() => { setView('summary'); getSummary(); }}>AI Summary</button>
-                  <button className={`tab-btn ${view === 'actions' ? 'active' : ''}`} onClick={() => { setView('actions'); getActions(); }}>Action Items</button>
-                  <button className={`tab-btn ${view === 'chat' ? 'active' : ''}`} onClick={() => setView('chat')}>☕︎ Chat</button>
-                </div>
+                {upcoming.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">{Icons.calendar}</div>
+                    <h3>No Upcoming Meetings</h3>
+                    <p>No online meetings found in your calendar for the next 7 days.</p>
+                  </div>
+                ) : (
+                  <div className="meeting-grid">
+                    {upcoming.map(m => {
+                      const s = getMeetingStatus(m);
+                      const live = isLive(m);
+                      const startTime = m.startLocal || m.start;
+                      const endTime = m.endLocal || m.end;
+
+                      return (
+                        <div key={m.id} className={`meeting-card ${s}`}>
+                          <div className="card-top">
+                            <div className={`card-status ${s}`}>
+                              {s === 'recording' && <><span className="pulse" />Recording</>}
+                              {s === 'joining' && <><span className="spinner-small" />Joining</>}
+                              {s === 'live' && <><span className="pulse" />Live Now</>}
+                              {s === 'scheduled' && <>{Icons.check} Scheduled</>}
+                              {s === 'upcoming' && <>{getTimeUntil(startTime)}</>}
+                            </div>
+                          </div>
+
+                          <h3 className="meeting-title">{m.subject}</h3>
+
+                          <div className="meeting-meta">
+                            <div className="meta-row">
+                              {Icons.calendar}
+                              <span>{formatDate(startTime)}</span>
+                            </div>
+                            <div className="meta-row">
+                              {Icons.clock}
+                              <span>{formatTime(startTime)} – {formatTime(endTime)}</span>
+                              <span className="duration">({formatDuration(startTime, endTime)})</span>
+                            </div>
+                            <div className="meta-row">
+                              {Icons.user}
+                              <span>{m.isOrganizer ? 'You (Organizer)' : m.organizerName || 'Unknown'}</span>
+                            </div>
+                          </div>
+
+                          {/* Participants Button */}
+                          {m.attendees && m.attendees.length > 0 && (
+                            <button
+                              className="participants-btn"
+                              onClick={() => setParticipantsModal(m)}
+                            >
+                              {Icons.users}
+                              <span>View {m.attendeeCount || m.attendees.length} Participants</span>
+                            </button>
+                          )}
+
+                          {(s === 'joining' || s === 'recording') && botStatus[m.id]?.logs && (
+                            <div className="bot-console">
+                              {botStatus[m.id].logs.slice(-3).map((log, i) => (
+                                <div key={i} className="log-line">{log}</div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="card-actions">
+                            {live ? (
+                              <button
+                                className="primary full-width"
+                                onClick={() => launchBot(m)}
+                                disabled={s === 'joining' || s === 'recording'}
+                              >
+                                {s === 'recording' ? 'Recording...' :
+                                  s === 'joining' ? 'Joining...' : 'Launch Bot'}
+                              </button>
+                            ) : (
+                              <button
+                                className={`${scheduled.includes(m.id) ? 'scheduled' : 'secondary'} full-width`}
+                                onClick={() => toggleSchedule(m)}
+                              >
+                                {scheduled.includes(m.id) ? 'Auto-Record On' : 'Schedule Recording'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* AI Assistant Tab */}
+        {tab === 'assistant' && (
+          <div className="assistant-layout">
+            <aside className="recordings-sidebar">
+              <div className="sidebar-header">
+                <h2>Recordings</h2>
+                <button className="icon-btn small" onClick={() => document.getElementById('upload').click()} title="Upload transcript">
+                  {Icons.folder}
+                </button>
+                <input id="upload" type="file" onChange={upload} style={{ display: 'none' }} />
               </div>
 
-              <div className="stage-content">
-                {view === 'overview' && (
-                  <div>
-                    {selectedMeeting.recordingUrl && (
-                      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                        <video controls width="100%" src={selectedMeeting.recordingUrl} style={{ display: 'block' }}>
-                          Your browser does not support the video tag.
-                        </video>
+              <div className="recordings-list">
+                {recordings.length === 0 ? (
+                  <div className="empty-sidebar">
+                    <p>No recordings yet</p>
+                    <p className="hint">Bot captures appear here automatically</p>
+                  </div>
+                ) : (
+                  recordings.map(m => (
+                    <div
+                      key={m.meetingId}
+                      className={`recording-item ${selected?.meetingId === m.meetingId ? 'active' : ''}`}
+                      onClick={() => selectRecording(m)}
+                    >
+                      <div className="recording-title">{m.meetingId}</div>
+                      <div className="recording-meta">
+                        {m.entries?.length || 0} segments · {new Date(m.importedAt || Date.now()).toLocaleDateString()}
                       </div>
-                    )}
-
-                    <div className="card">
-                      <h4 style={{ marginBottom: '16px' }}>Transcript Preview</h4>
-                      <div style={{ fontFamily: 'Segoe UI, sans-serif', fontSize: '13px', lineHeight: '1.6' }}>
-                        {selectedMeeting.entries?.slice(0, 50).map((e, i) => (
-                          <div key={i} style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
-                            <div className="transcript-speaker" style={{ fontWeight: '600', minWidth: '80px', color: 'var(--teams-purple)' }}>{e.speaker}</div>
-                            <div style={{ color: 'var(--text-primary)' }}>{e.text}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', minWidth: '40px', textAlign: 'right' }}>{e.start}</div>
-                          </div>
-                        ))}
-                        {selectedMeeting.entries?.length > 50 && <div style={{ textAlign: 'center', padding: '10px', color: '#666', fontStyle: 'italic' }}>... {selectedMeeting.entries.length - 50} more entries ...</div>}
-                      </div>
+                      <button className="delete-btn" onClick={(e) => { e.stopPropagation(); deleteMeeting(m.meetingId); }}>{Icons.x}</button>
                     </div>
-                  </div>
+                  ))
                 )}
+              </div>
+            </aside>
 
-                {view === 'summary' && (
-                  <div className="card">
-                    {summary?.error ? (
-                      <p style={{ color: '#a80000' }}>Error: {summary.error}</p>
-                    ) : (
-                      <div style={{ lineHeight: '1.6' }}>
-                        {summary ? (
-                          <div dangerouslySetInnerHTML={{ __html: summary.summary.replace(/\n/g, '<br/>') }} />
-                        ) :
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div className="spinner"></div> Generating summary...
-                          </div>
-                        }
+            <div className="analysis-main">
+              {!selected ? (
+                <div className="select-prompt">
+                  <div className="prompt-icon">{Icons.file}</div>
+                  <h2>Select a Recording</h2>
+                  <p>Choose a meeting from the sidebar to analyze</p>
+                </div>
+              ) : (
+                <>
+                  <div className="analysis-header">
+                    <h1>{selected.meetingId}</h1>
+                    <p className="subtitle">{selected.entries?.length || 0} segments · {selected.source || 'Upload'}</p>
+                  </div>
+
+                  <div className="analysis-tabs">
+                    <button className={`tab ${view === 'transcript' ? 'active' : ''}`} onClick={() => setView('transcript')}>
+                      {Icons.file} Transcript
+                    </button>
+                    <button className={`tab ${view === 'summary' ? 'active' : ''}`} onClick={() => { setView('summary'); loadSummary(); }}>
+                      {Icons.sparkle} Summary
+                    </button>
+                    <button className={`tab ${view === 'actions' ? 'active' : ''}`} onClick={() => { setView('actions'); loadActions(); }}>
+                      {Icons.check} Actions
+                    </button>
+                    <button className={`tab ${view === 'chat' ? 'active' : ''}`} onClick={() => setView('chat')}>
+                      {Icons.message} Ask AI
+                    </button>
+                  </div>
+
+                  <div className="analysis-content">
+                    {view === 'transcript' && (
+                      <div className="transcript-view">
+                        {selected.entries?.length > 0 ? (
+                          selected.entries.map((e, i) => (
+                            <div key={i} className="transcript-entry">
+                              <span className="speaker">{e.speaker}</span>
+                              <span className="text">{e.text}</span>
+                              <span className="time">{e.start}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="no-data">No transcript data</p>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {view === 'actions' && (
-                  <div className="card">
-                    {actionItems?.error ? (
-                      <p style={{ color: '#a80000' }}>Error: {actionItems.error}</p>
-                    ) : (
-                      <div style={{ width: '100%' }}>
-                        {!actionItems ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Generating action items...</div>
+                    {view === 'summary' && (
+                      <div className="summary-view">
+                        {summary?.error ? (
+                          <p className="error">{summary.error}</p>
+                        ) : summary?.summary ? (
+                          <div className="summary-content" dangerouslySetInnerHTML={{ __html: summary.summary.replace(/\n/g, '<br/>') }} />
                         ) : (
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                          <div className="loading"><span className="spinner" />Generating summary...</div>
+                        )}
+                      </div>
+                    )}
+
+                    {view === 'actions' && (
+                      <div className="actions-view">
+                        {actions?.error ? (
+                          <p className="error">{actions.error}</p>
+                        ) : actions?.actionItems ? (
+                          <table className="actions-table">
                             <thead>
-                              <tr style={{ borderBottom: '2px solid #f0f0f0', textAlign: 'left' }}>
-                                <th style={{ padding: '8px' }}>Task</th>
-                                <th style={{ padding: '8px', width: '150px' }}>Owner</th>
-                                <th style={{ padding: '8px', width: '100px' }}>Priority</th>
-                              </tr>
+                              <tr><th>Task</th><th>Owner</th><th>Priority</th></tr>
                             </thead>
                             <tbody>
-                              {actionItems.actionItems?.map((item, i) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #f9f9f9' }}>
-                                  <td style={{ padding: '12px 8px' }}>{item.task}</td>
-                                  <td style={{ padding: '12px 8px' }}>
-                                    <span style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: '12px', fontSize: '11px' }}>{item.owner}</span>
-                                  </td>
-                                  <td style={{ padding: '12px 8px' }}>
-                                    <span style={{
-                                      color: item.priority?.toLowerCase().includes('high') ? '#d13438' : '#605e5c',
-                                      fontWeight: item.priority?.toLowerCase().includes('high') ? '600' : '400'
-                                    }}>
-                                      {item.priority}
-                                    </span>
-                                  </td>
+                              {actions.actionItems.map((item, i) => (
+                                <tr key={i}>
+                                  <td>{item.task}</td>
+                                  <td><span className="owner-tag">{item.owner}</span></td>
+                                  <td><span className={`priority ${item.priority?.toLowerCase()}`}>{item.priority}</span></td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
+                        ) : (
+                          <div className="loading"><span className="spinner" />Extracting actions...</div>
                         )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {view === 'chat' && (
-                  <div className="chat-container">
-                    <div className="chat-history">
-                      {chatMessages.length === 0 && (
-                        <div style={{ textAlign: 'center', color: '#666', marginTop: '40px' }}>
-                          <p>Ask questions about this meeting transcript.</p>
-                          <p style={{ fontSize: '12px' }}>Examples: "What did John say about the deadline?", "Summarize the budget discussion."</p>
+                    {view === 'chat' && (
+                      <div className="chat-view">
+                        <div className="chat-messages">
+                          {chat.length === 0 && (
+                            <div className="chat-empty">
+                              <p><strong>Ask about this meeting</strong></p>
+                              <p>Example: "What were the key decisions?"</p>
+                            </div>
+                          )}
+                          {chat.map((msg, i) => (
+                            <div key={i} className={`chat-msg ${msg.role}`}>
+                              <div className="msg-bubble">{msg.content}</div>
+                            </div>
+                          ))}
+                          <div ref={chatEnd} />
                         </div>
-                      )}
-
-                      {chatMessages.map((m, i) => (
-                        <div key={i} className={`chat-message ${m.role}`}>
-                          <div className="message-role">{m.role === 'user' ? 'You' : 'MeetingAI'}</div>
-                          <div className="message-bubble">
-                            {m.content}
-                            {m.sources && (
-                              <div style={{ marginTop: '8px' }}>
-                                {m.sources.map((s, si) => (
-                                  <div key={si} className="source-citation">
-                                    <div style={{ fontWeight: '600', marginBottom: '2px' }}>Source {si + 1}</div>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.text}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                        <div className="chat-input-area">
+                          <input
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                            placeholder="Ask a question..."
+                          />
+                          <button className="primary" onClick={sendMessage}>Send</button>
                         </div>
-                      ))}
-                      <div ref={chatEndRef} />
-                    </div>
-
-                    <div className="chat-input-area">
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={e => setChatInput(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && sendChat()}
-                        placeholder="Type a message..."
-                      />
-                      <button className="primary" onClick={sendChat} style={{ padding: '8px 20px' }}>
-                        Send
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="welcome-state">
-              <div style={{ fontSize: '48px', color: '#E1DFDD', marginBottom: '16px' }}>☕︎</div>
-              <h3>Select a meeting to begin</h3>
-              <p>Choose a meeting from the sidebar or upload a new transcript.</p>
+                </>
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
