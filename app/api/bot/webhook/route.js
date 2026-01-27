@@ -38,15 +38,16 @@ export async function POST(request) {
                 if (event.type === 'recording_started') newState.status = 'recording';
                 if (event.type === 'bot_kicked') newState.status = 'error'; // Show as error/alert
 
-                if (event.type === 'meeting_ended' || event.type === 'error' || event.type === 'bot_kicked') {
-                    // removing from active sessions eventually, but maybe keep it for a moment to show error
-                    // For now, let's keep it but mark status as error so UI shows red
+                if (event.type === 'meeting_ended' || event.type === 'error') {
+                    // Remove ended sessions
+                    global.activeSessions.delete(event.sessionId);
+                } else {
+                    // Update state for joined, recording, or kicked properties
+                    // If kicked, we want to KEEP it so user sees the error
                     if (event.type === 'bot_kicked') {
                         newState.status = 'kicked';
-                    } else {
-                        global.activeSessions.delete(event.sessionId);
+                        newState.error = event.data?.reason || 'Removed from meeting';
                     }
-                } else {
                     global.activeSessions.set(event.sessionId, newState);
                 }
             }

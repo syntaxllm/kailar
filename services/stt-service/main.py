@@ -32,6 +32,7 @@ class TranscriptionResponse(BaseModel):
     status: str
     transcript: List[TranscriptEntry]
     duration: float
+    audio_path: Optional[str] = None
 
 @app.get("/health")
 def health():
@@ -57,15 +58,23 @@ async def transcribe(
 
     start_ts = time.time()
     
-    # Save file temporarily
-    temp_path = f"temp_{meeting_id}.wav"
-    with open(temp_path, "wb") as f:
+    # Create recordings directory if not exists
+    storage_dir = os.path.join(os.getcwd(), "recordings")
+    os.makedirs(storage_dir, exist_ok=True)
+
+    # Save file permanently
+    filename = f"{meeting_id}_{int(time.time())}.wav"
+    file_path = os.path.join(storage_dir, filename)
+    
+    with open(file_path, "wb") as f:
         f.write(await file.read())
     
+    print(f"📁 Audio saved to: {file_path}")
+
     try:
         # 1. Transcribe with faster-whisper + Silero VAD
         segments, info = model.transcribe(
-            temp_path, 
+            file_path, 
             beam_size=5, 
             vad_filter=True, 
             vad_parameters=dict(min_silence_duration_ms=500)
@@ -79,8 +88,12 @@ async def transcribe(
                 # Find speaker active at this segment's start time
                 # log: [{name, timestamp}, ...]
                 current_speaker = "Unknown"
-                for entry in real_speakers:
-                    if entry['timestamp'] <= segment.start:
+                # Use a simple heuristic: who was speaking MOST RECENTLY before this segment started?
+                # Sort speakers by timestamp just in case
+                sorted_speakers = sorted(real_speakers, key=lambda x: x['timestamp'])
+                
+                for entry in sorted_speakers:
+                    if entry['timestamp'] <= segment.start + 1.0: # Add 1s buffer/overlap
                         current_speaker = entry['name']
                     else:
                         break
@@ -93,20 +106,21 @@ async def transcribe(
                 text=segment.text.strip()
             ))
             
-        # 2. Add Diarization logic here later (pyannote.audio)
-        # Note: For now, we remain compatible with the schema
-        
         end_ts = time.time()
         
         return TranscriptionResponse(
             meeting_id=meeting_id,
             status="completed",
             transcript=transcript,
-            duration=end_ts - start_ts
+            duration=end_ts - start_ts,
+            audio_path=filename # Return relative path
         )
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+    except Exception as e:
+        print(f"❌ Transcription failed: {str(e)}")
+        # Delete on error only
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise e
 
 if __name__ == "__main__":
     import uvicorn

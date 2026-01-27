@@ -57,11 +57,21 @@ export async function POST(request) {
             }, { status: 401 });
         }
 
-        const tokenData = JSON.parse(tokenCookie.value);
-        const accessToken = tokenData.access_token;
+        let accessToken = tokenCookie.value;
+        let userEmail = body.userEmail || 'unknown';
 
-        // Get user email from token or request
-        const userEmail = body.userEmail || tokenData.userEmail || 'unknown';
+        // Check if cookie is JSON or raw string (legacy check)
+        try {
+            // If it happens to be a JSON object
+            if (accessToken.startsWith('{')) {
+                const tokenData = JSON.parse(accessToken);
+                accessToken = tokenData.access_token;
+                if (tokenData.userEmail) userEmail = tokenData.userEmail;
+            }
+        } catch (e) {
+            // It's a raw string, which is expected from our auth callback
+            console.log("Token is raw string (expected)");
+        }
 
         // Run the hybrid processing
         const result = await processMeeting({

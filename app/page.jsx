@@ -1,6 +1,74 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 
+const Icons = {
+  bot: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><line x1="12" y1="7" x2="12" y2="11" /><circle cx="8" cy="16" r="1" /><circle cx="16" cy="16" r="1" /></svg>,
+  sparkle: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>,
+  calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
+  clock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg>,
+  user: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
+  users: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+  link: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+  folder: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>,
+  file: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>,
+  check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20,6 9,17 4,12" /></svg>,
+  message: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+  refresh: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23,4 23,10 17,10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>,
+  moon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>,
+  sun: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>,
+  x: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  play: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>,
+  stop: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" /></svg>,
+  activity: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12" /></svg>,
+  zap: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10" /></svg>,
+};
+
+function SummaryComponent({ summary }) {
+  if (!summary) return null;
+
+  const parseSection = (title) => {
+    const regex = new RegExp(`### ${title}\n([\s\S]*?)(?=\n###|$)`, 'i');
+    const match = summary.match(regex);
+    if (!match) return null;
+    return match[1].split('\n').map(s => s.replace(/^-/, '').trim()).filter(Boolean);
+  };
+
+  const sections = {
+    "Executive Summary": parseSection("Executive Summary"),
+    "Key Points": parseSection("Key Points"),
+    "Decisions": parseSection("Decisions Made"),
+    "Action Items": parseSection("Action Items")
+  };
+
+  const sectionIcons = {
+    "Executive Summary": Icons.sparkle,
+    "Key Points": Icons.check,
+    "Decisions": Icons.zap,
+    "Action Items": Icons.folder
+  };
+
+  return (
+    <div className="summary-grid">
+      {Object.entries(sections).map(([title, items]) => {
+        if (!items || items.length === 0) return null;
+        return (
+          <div key={title} className="summary-card">
+            <div className="summary-card-header">
+              {sectionIcons[title]}
+              <h3>{title}</h3>
+            </div>
+            <ul className="summary-card-list">
+              {items.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SkaryaAI() {
   // State
   const [tab, setTab] = useState('bot');
@@ -326,29 +394,6 @@ export default function SkaryaAI() {
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  // Icons
-  const Icons = {
-    bot: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><line x1="12" y1="7" x2="12" y2="11" /><circle cx="8" cy="16" r="1" /><circle cx="16" cy="16" r="1" /></svg>,
-    sparkle: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>,
-    calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
-    clock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg>,
-    user: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
-    users: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
-    link: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
-    folder: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>,
-    file: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>,
-    check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20,6 9,17 4,12" /></svg>,
-    message: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
-    refresh: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23,4 23,10 17,10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>,
-    moon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>,
-    sun: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>,
-    x: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
-    play: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>,
-    stop: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="6" width="12" height="12" /></svg>,
-    activity: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12" /></svg>,
-    zap: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10" /></svg>,
-  };
-
   return (
     <div className="app-container">
       {/* Participants Modal */}
@@ -423,170 +468,264 @@ export default function SkaryaAI() {
         {/* ============ BOT OPERATIONS ============ */}
         {tab === 'bot' && (
           <div className="bot-operations">
-            {/* Quick Actions Bar */}
-            <div className="quick-actions">
-              <div className="quick-join">
-                <h3>{Icons.zap} Quick Join</h3>
-                <p>Paste a Teams meeting link to launch the bot instantly</p>
-                <div className="join-input-group">
-                  <input
-                    type="text"
-                    value={manualUrl}
-                    onChange={e => setManualUrl(e.target.value)}
-                    placeholder="https://teams.microsoft.com/l/meetup-join/..."
-                    onKeyDown={e => e.key === 'Enter' && launchManualBot()}
-                  />
-                  <button className="primary" onClick={launchManualBot} disabled={!manualUrl.trim()}>
-                    {Icons.play} Launch Bot
-                  </button>
-                </div>
-              </div>
-            </div>
+            <div className="bot-grid">
+              <div className="bot-main">
+                {/* Upcoming Meetings */}
+                <section className="bot-section">
+                  <div className="section-header">
+                    <h2>{Icons.calendar} Upcoming Meetings</h2>
+                    {isLoggedIn && (
+                      <button className="secondary" onClick={loadUpcoming} disabled={loading}>
+                        {Icons.refresh}<span>{loading ? 'Syncing...' : 'Refresh'}</span>
+                      </button>
+                    )}
+                  </div>
 
-            {/* Active Sessions */}
-            <section className="bot-section">
-              <div className="section-header">
-                <h2>{Icons.activity} Active Sessions</h2>
-                <span className="session-count">{activeSessions.length} running</span>
-              </div>
-
-              {activeSessions.length === 0 ? (
-                <div className="empty-section">
-                  <p>No active recording sessions</p>
-                </div>
-              ) : (
-                <div className="sessions-list">
-                  {activeSessions.map(session => (
-                    <div key={session.id} className="session-card">
-                      <div className="session-status">
-                        <span className={`pulse ${session.status === 'kicked' ? 'error' : ''}`}></span>
-                        {session.status === 'joining' ? 'Joining...' :
-                          session.status === 'kicked' ? 'Kicked from Meeting' : 'Recording'}
-                      </div>
-                      <div className="session-info">
-                        <span className="session-title">{session.title || session.id}</span>
-                        <span className="session-time">Started {formatTimeAgo(session.startedAt)}</span>
-                      </div>
-                      <button className="stop-btn" onClick={() => stopBot(session.id)}>
-                        {Icons.stop} Stop
+                  {!isLoggedIn ? (
+                    <div className="connect-prompt">
+                      <div className="prompt-icon">{Icons.link}</div>
+                      <h2>Connect Microsoft Teams</h2>
+                      <p>Link your account to see upcoming meetings and auto-schedule recordings</p>
+                      <button className="primary large" onClick={() => window.location.href = '/api/auth/login'}>
+                        Connect Teams
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </section>
+                  ) : upcoming.length === 0 ? (
+                    <div className="empty-section">
+                      <p>No upcoming meetings in the next 7 days</p>
+                    </div>
+                  ) : (
+                    <div className="meeting-grid">
+                      {upcoming.map(m => {
+                        const s = getMeetingStatus(m);
+                        const live = isLive(m);
+                        const startTime = m.startLocal || m.start;
+                        const endTime = m.endLocal || m.end;
 
-            {/* Upcoming Meetings */}
-            <section className="bot-section">
-              <div className="section-header">
-                <h2>{Icons.calendar} Upcoming Meetings</h2>
-                {isLoggedIn && (
-                  <button className="secondary" onClick={loadUpcoming} disabled={loading}>
-                    {Icons.refresh}<span>{loading ? 'Syncing...' : 'Refresh'}</span>
-                  </button>
-                )}
+                        return (
+                          <div key={m.id} className={`meeting-card ${s}`}>
+                            <div className="card-top">
+                              <div className={`card-status ${s}`}>
+                                {s === 'recording' && <><span className="pulse" />Recording</>}
+                                {s === 'joining' && <><span className="spinner-small" />Joining</>}
+                                {s === 'live' && <><span className="pulse" />Live</>}
+                                {s === 'scheduled' && <>{Icons.check} Auto</>}
+                                {s === 'upcoming' && getTimeUntil(startTime)}
+                              </div>
+                            </div>
+
+                            <h3 className="meeting-title">{m.subject}</h3>
+
+                            <div className="meeting-meta">
+                              <div className="meta-row">{Icons.calendar}<span>{formatDate(startTime)}</span></div>
+                              <div className="meta-row">
+                                {Icons.clock}
+                                <span>{formatTime(startTime)} – {formatTime(endTime)}</span>
+                                <span className="duration">({formatDuration(startTime, endTime)})</span>
+                              </div>
+                              <div className="meta-row">
+                                {Icons.user}
+                                <span>{m.isOrganizer ? 'You (Organizer)' : m.organizerName || 'Unknown'}</span>
+                              </div>
+                            </div>
+
+                            {m.attendees?.length > 0 && (
+                              <button className="participants-btn" onClick={() => setParticipantsModal(m)}>
+                                {Icons.users}<span>{m.attendeeCount || m.attendees.length} participants</span>
+                              </button>
+                            )}
+
+                            <div className="card-actions">
+                              {live ? (
+                                <button className="primary full-width" onClick={() => launchBotForMeeting(m)} disabled={s === 'joining' || s === 'recording'}>
+                                  {s === 'recording' ? 'Recording...' : s === 'joining' ? 'Joining...' : 'Launch Bot Now'}
+                                </button>
+                              ) : (
+                                <button className={`${scheduled.includes(m.id) ? 'scheduled' : 'secondary'} full-width`} onClick={() => toggleSchedule(m)}>
+                                  {scheduled.includes(m.id) ? 'Auto-Record On' : 'Enable Auto-Record'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
               </div>
+              <div className="bot-sidebar">
+                {/* Magic "Smart Join" Hero */}
+                {/* Magic "Smart Join" Hero - Always render to check for demo/active */}
+                {(() => {
+                  // FIND CURRENT MEETING
+                  let current = upcoming.find(m => {
+                    const now = new Date();
+                    const start = new Date(m.startLocal || m.start);
+                    const end = new Date(m.endLocal || m.end);
+                    return now >= new Date(start.getTime() - 10 * 60000) && now <= end;
+                  });
 
-              {!isLoggedIn ? (
-                <div className="connect-prompt">
-                  <div className="prompt-icon">{Icons.link}</div>
-                  <h2>Connect Microsoft Teams</h2>
-                  <p>Link your account to see upcoming meetings and auto-schedule recordings</p>
-                  <button className="primary large" onClick={() => window.location.href = '/api/auth/login'}>
-                    Connect Teams
-                  </button>
-                </div>
-              ) : upcoming.length === 0 ? (
-                <div className="empty-section">
-                  <p>No upcoming meetings in the next 7 days</p>
-                </div>
-              ) : (
-                <div className="meeting-grid">
-                  {upcoming.map(m => {
-                    const s = getMeetingStatus(m);
-                    const live = isLive(m);
-                    const startTime = m.startLocal || m.start;
-                    const endTime = m.endLocal || m.end;
+                  // --- DEMO MODE: Force a meeting if none exists (for User Review) ---
+                  if (!current) { // Always show demo if no real meeting found
+                    current = {
+                      id: 'demo_meeting_123',
+                      subject: 'Project Sync (Demo)',
+                      startLocal: new Date().toISOString(),
+                      endLocal: new Date(Date.now() + 30 * 60000).toISOString(),
+                      organizerName: 'Demo Organizer',
+                      attendees: [
+                        { name: 'Alice', email: 'alice@example.com' },
+                        { name: 'Bob', email: 'bob@example.com' }
+                      ],
+                      joinUrl: 'https://teams.microsoft.com/l/meetup-join/demo'
+                    };
+                  }
+                  // ------------------------------------------------------------------
 
-                    return (
-                      <div key={m.id} className={`meeting-card ${s}`}>
-                        <div className="card-top">
-                          <div className={`card-status ${s}`}>
-                            {s === 'recording' && <><span className="pulse" />Recording</>}
-                            {s === 'joining' && <><span className="spinner-small" />Joining</>}
-                            {s === 'live' && <><span className="pulse" />Live</>}
-                            {s === 'scheduled' && <>{Icons.check} Auto</>}
-                            {s === 'upcoming' && getTimeUntil(startTime)}
-                          </div>
+                  if (!current) return null;
+
+                  const status = botStatus[current.id]?.status;
+                  const isProcessing = status === 'joining' || status === 'recording';
+
+                  return (
+                    <div className="magic-hero-card">
+                      <div className="magic-content">
+                        <div className="magic-badge">
+                          <span className="pulse-dot"></span> Happening Now
                         </div>
-
-                        <h3 className="meeting-title">{m.subject}</h3>
-
-                        <div className="meeting-meta">
-                          <div className="meta-row">{Icons.calendar}<span>{formatDate(startTime)}</span></div>
-                          <div className="meta-row">
-                            {Icons.clock}
-                            <span>{formatTime(startTime)} – {formatTime(endTime)}</span>
-                            <span className="duration">({formatDuration(startTime, endTime)})</span>
-                          </div>
-                          <div className="meta-row">
-                            {Icons.user}
-                            <span>{m.isOrganizer ? 'You (Organizer)' : m.organizerName || 'Unknown'}</span>
-                          </div>
+                        <h1 className="magic-title">{current.subject}</h1>
+                        <div className="magic-meta">
+                          <span>{formatDuration(current.startLocal || current.start, current.endLocal || current.end)} meeting</span>
+                          <span className="separator">•</span>
+                          <span>{current.organizerName || 'Unknown Organizer'}</span>
                         </div>
-
-                        {m.attendees?.length > 0 && (
-                          <button className="participants-btn" onClick={() => setParticipantsModal(m)}>
-                            {Icons.users}<span>{m.attendeeCount || m.attendees.length} participants</span>
-                          </button>
-                        )}
-
-                        <div className="card-actions">
-                          {live ? (
-                            <button className="primary full-width" onClick={() => launchBotForMeeting(m)} disabled={s === 'joining' || s === 'recording'}>
-                              {s === 'recording' ? 'Recording...' : s === 'joining' ? 'Joining...' : 'Launch Bot Now'}
-                            </button>
-                          ) : (
-                            <button className={`${scheduled.includes(m.id) ? 'scheduled' : 'secondary'} full-width`} onClick={() => toggleSchedule(m)}>
-                              {scheduled.includes(m.id) ? 'Auto-Record On' : 'Enable Auto-Record'}
-                            </button>
+                        <div className="magic-attendees">
+                          {current.attendees?.slice(0, 3).map((a, i) => (
+                            <span key={i} className="mini-avatar" title={a.name}>
+                              {a.name.charAt(0).toUpperCase()}
+                            </span>
+                          ))}
+                          {(current.attendees?.length || 0) > 3 && (
+                            <span className="more-count">+{current.attendees.length - 3}</span>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
 
-            {/* Recent Activity */}
-            <section className="bot-section">
-              <div className="section-header">
-                <h2>{Icons.folder} Recent Recordings</h2>
-              </div>
-
-              {recentActivity.length === 0 ? (
-                <div className="empty-section">
-                  <p>No recent recordings</p>
-                </div>
-              ) : (
-                <div className="activity-list">
-                  {recentActivity.map(item => (
-                    <div key={item.id} className="activity-item" onClick={() => {
-                      const rec = recordings.find(r => r.meetingId === item.id);
-                      if (rec) selectRecording(rec);
-                    }}>
-                      <div className="activity-icon">{Icons.file}</div>
-                      <div className="activity-info">
-                        <span className="activity-title">{item.title}</span>
-                        <span className="activity-meta">{item.segments} segments · {formatTimeAgo(item.timestamp)}</span>
+                      <div className="magic-action">
+                        <button
+                          className={`magic-btn ${isProcessing ? 'processing' : ''}`}
+                          onClick={() => launchBotForMeeting(current)}
+                          disabled={isProcessing}
+                        >
+                          {isProcessing ? (
+                            <>
+                              <span className="spinner-white" />
+                              <div className="btn-text">
+                                <span className="btn-label">
+                                  {status === 'recording' ? 'Bot Active' : 'Connecting...'}
+                                </span>
+                                <span className="btn-sub" style={{ opacity: 0.6 }}>
+                                  {status === 'joining' ? 'Navigating Teams...' : 'Recording Audio'}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="magic-icon">{Icons.zap}</div>
+                              <div className="btn-text">
+                                <span className="btn-label">Join Now</span>
+                                <span className="btn-sub">Launch Bot AI</span>
+                              </div>
+                            </>
+                          )}
+                        </button>
                       </div>
-                      <span className="activity-status completed">{Icons.check}</span>
                     </div>
-                  ))}
+                  );
+                })()}
+                {/* Quick Actions Bar */}
+                <div className="quick-actions">
+                  <div className="quick-join">
+                    <h3>{Icons.zap} Quick Join</h3>
+                    <p>Paste a Teams meeting link to launch the bot instantly.</p>
+                    <div className="join-input-group">
+                      <input
+                        type="text"
+                        value={manualUrl}
+                        onChange={e => setManualUrl(e.target.value)}
+                        placeholder="https://teams.microsoft.com/..."
+                        onKeyDown={e => e.key === 'Enter' && launchManualBot()}
+                      />
+                      <button className="primary" onClick={launchManualBot} disabled={!manualUrl.trim()}>
+                        {Icons.play}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </section>
+
+                {/* Active Sessions */}
+                <section className="bot-section">
+                  <div className="section-header">
+                    <h2>{Icons.activity} Active Sessions</h2>
+                    <span className="session-count">{activeSessions.length} running</span>
+                  </div>
+
+                  {activeSessions.length === 0 ? (
+                    <div className="empty-section">
+                      <p>No active sessions</p>
+                    </div>
+                  ) : (
+                    <div className="sessions-list">
+                      {activeSessions.map(session => (
+                        <div key={session.id} className="session-card">
+                          <div className="session-status">
+                            <span className={`pulse ${session.status === 'kicked' ? 'error' : ''}`}></span>
+                            {session.status === 'joining' ? 'Joining...' :
+                              session.status === 'kicked' ? 'Kicked' : 'Recording'}
+                          </div>
+                          <div className="session-info">
+                            <span className="session-title">{session.title || session.id}</span>
+                            <span className="session-time">Started {formatTimeAgo(session.startedAt)}</span>
+                          </div>
+                          <button className="stop-btn" onClick={() => stopBot(session.id)}>
+                            {Icons.stop}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {/* Recent Activity */}
+                <section className="bot-section">
+                  <div className="section-header">
+                    <h2>{Icons.folder} Recent Recordings</h2>
+                  </div>
+
+                  {recentActivity.length === 0 ? (
+                    <div className="empty-section">
+                      <p>No recent recordings</p>
+                    </div>
+                  ) : (
+                    <div className="activity-list">
+                      {recentActivity.map(item => (
+                        <div key={item.id} className="activity-item" onClick={() => {
+                          const rec = recordings.find(r => r.meetingId === item.id);
+                          if (rec) selectRecording(rec);
+                        }}>
+                          <div className="activity-icon">{Icons.file}</div>
+                          <div className="activity-info">
+                            <span className="activity-title">{item.title}</span>
+                            <span className="activity-meta">{item.segments} segments · {formatTimeAgo(item.timestamp)}</span>
+                          </div>
+                          <span className="activity-status completed">{Icons.check}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </div>
           </div>
         )}
 
@@ -643,8 +782,10 @@ export default function SkaryaAI() {
                       <div className="transcript-view">
                         {selected.entries?.length > 0 ? selected.entries.map((e, i) => (
                           <div key={i} className="transcript-entry">
-                            <span className="speaker">{e.speaker}</span>
-                            <span className="text">{e.text}</span>
+                            <div className="transcript-main">
+                              <div className="speaker-name">{e.speaker}</div>
+                              <p className="text">{e.text}</p>
+                            </div>
                             <span className="time">{e.start}</span>
                           </div>
                         )) : <p className="no-data">No transcript data</p>}
@@ -654,7 +795,7 @@ export default function SkaryaAI() {
                     {view === 'summary' && (
                       <div className="summary-view">
                         {summary?.error ? <p className="error">{summary.error}</p> : summary?.summary ? (
-                          <div className="summary-content" dangerouslySetInnerHTML={{ __html: summary.summary.replace(/\n/g, '<br/>') }} />
+                          <SummaryComponent summary={summary.summary} />
                         ) : <div className="loading"><span className="spinner" />Generating...</div>}
                       </div>
                     )}
@@ -662,18 +803,17 @@ export default function SkaryaAI() {
                     {view === 'actions' && (
                       <div className="actions-view">
                         {actions?.error ? <p className="error">{actions.error}</p> : actions?.actionItems ? (
-                          <table className="actions-table">
-                            <thead><tr><th>Task</th><th>Owner</th><th>Priority</th></tr></thead>
-                            <tbody>
-                              {actions.actionItems.map((item, i) => (
-                                <tr key={i}>
-                                  <td>{item.task}</td>
-                                  <td><span className="owner-tag">{item.owner}</span></td>
-                                  <td><span className={`priority ${item.priority?.toLowerCase()}`}>{item.priority}</span></td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          <div className="actions-grid">
+                            {actions.actionItems.map((item, i) => (
+                              <div key={i} className="action-card">
+                                <p className="action-task">{item.task}</p>
+                                <div className="action-meta">
+                                  <span className="owner-tag">{item.owner}</span>
+                                  <span className={`priority ${item.priority?.toLowerCase()}`}>{item.priority}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         ) : <div className="loading"><span className="spinner" />Extracting...</div>}
                       </div>
                     )}

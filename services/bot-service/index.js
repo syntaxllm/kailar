@@ -1,6 +1,11 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+// Enhanced Puppeteer
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { launch } = require('puppeteer-stream');
+
+puppeteer.use(StealthPlugin());
+
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
@@ -161,7 +166,8 @@ app.get('/transcript/:sessionId', (req, res) => {
         sessionId: req.params.sessionId,
         status: session.status,
         transcript: session.transcript || [],
-        duration: session.duration || 0
+        duration: session.duration || 0,
+        audioPath: session.audioPath || null
     });
 });
 
@@ -188,14 +194,17 @@ async function runBot(sessionId) {
     let browser;
     try {
         browser = await launch({
-            executablePath: puppeteer.executablePath(),
+            executablePath: require('puppeteer').executablePath(), // Use standard chrome path
             defaultViewport: { width: 1280, height: 720 },
-            headless: process.env.HEADLESS !== 'false',
+            headless: process.env.HEADLESS === 'true' ? 'new' : false, // 'new' is faster/better
             args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
                 '--use-fake-ui-for-media-stream',
                 '--use-fake-device-for-media-stream',
                 '--disable-notifications',
-                '--no-sandbox'
+                '--disable-infobars',
+                '--window-size=1280,720'
             ]
         });
 
@@ -208,55 +217,108 @@ async function runBot(sessionId) {
         await page.goto(session.joinUrl, { waitUntil: 'networkidle2' });
 
         // Teams interaction...
-        // Teams Flow Resilience
+        // Teams Flow Resilience: Handle "Get App" / "Continue on Browser" interceptor
         try {
-            // Wait for either the "Join on the web" button or the name input directly
-            const continueBtnSelector = 'button.open-web-button, button[aria-label="Continue on this browser"]';
-            const nameInputSelector = 'input[data-tid="prejoin-display-name-input"], input[placeholder="Type your name"], input[name="displayName"]';
+            console.log("[Bot] Checking for 'Continue on this browser' interceptors...");
 
-            const element = await page.waitForSelector(`${continueBtnSelector}, ${nameInputSelector}`, { timeout: 20000 });
-            const tagName = await element.evaluate(el => el.tagName);
+            // Extensive list of known selectors for the "Continue on browser" button
+            const continueSelectors = [
+                'button[data-tid="joinOnWeb"]',
+                'button.open-web-button',
+                'button[aria-label="Continue on this browser"]',
+                'button[aria-label="Use the web app instead"]',
+                '.input-group button.btn-primary' // Sometimes generic
+            ];
 
-            if (tagName === 'BUTTON') {
-                console.log("[Bot] Clicking 'Continue on this browser' button...");
-                await element.click();
+            // Also watch for the name input immediately (if we skipped the interceptor)
+            const nameInputSelectors = [
+                'input[data-tid="prejoin-display-name-input"]',
+                'input[name="displayName"]',
+                'input[placeholder="Type your name"]',
+                '#username'
+            ];
+
+            const combinedSelector = [...continueSelectors, ...nameInputSelectors].join(', ');
+
+            // Wait for ANY of these to appear
+            const foundElement = await page.waitForSelector(combinedSelector, { timeout: 25000 });
+
+            // Check what we found
+            const isButton = await foundElement.evaluate(el => el.tagName === 'BUTTON' || el.getAttribute('role') === 'button');
+
+            if (isButton) {
+                console.log("[Bot] Interrupt screen detected. Clicking 'Continue on Browser'...");
+                await foundElement.click();
+
+                // After clicking, we must wait for the PRE-JOIN screen (Name input)
+                await page.waitForSelector(nameInputSelectors.join(', '), { timeout: 40000 });
+                console.log("[Bot] Successfully navigated to Pre-Join screen.");
+            } else {
+                console.log("[Bot] Directly landed on Pre-Join screen (Name Input).");
             }
         } catch (e) {
-            console.log("[Bot] No 'Continue' button found, might be on name input page already.");
+            console.warn("[Bot] Navigation warning: Could not find 'Continue' or 'Name Input' within timeout. checking if already joined or different layout.", e.message);
         }
 
         // Wait for Name Input
-        // 2a. Turn OFF Camera (to avoid fake rainbow video)
+        // 2a. Turn OFF Camera (Critical to avoid 'fake device' banner issues)
         try {
             const camToggleSelector = 'div[data-tid="toggle-video"] > [aria-checked="true"]';
-            // If we find a checked toggle, click it to uncheck (turn off)
+            const micToggleSelector = 'div[data-tid="toggle-mute"] > [aria-checked="true"]';
+
+            // Attempt to turn off video
             const camToggle = await page.$(camToggleSelector);
             if (camToggle) {
                 await camToggle.click();
                 console.log("[Bot] Camera turned OFF.");
+                await new Promise(r => setTimeout(r, 500)); // Brief pause
             }
+
+            // Attempt to turn off mic (optional, but good practice if we only want to listen)
+            // But we might want to announce ourselves? For now, let's leave mic ON or respect default.
+            // keeping mic logic commented out unless requested.
         } catch (e) {
-            console.log("[Bot] Could not toggle camera off (might be already off).");
+            console.log("[Bot] Camera toggle check skipped.");
         }
 
         // 3. Enter Name
-        const botName = process.env.BOT_NAME || "Skarya Bot";
+        const botName = process.env.BOT_NAME || "Meeting Assistant";
         const nameInputSelector = 'input[data-tid="prejoin-display-name-input"], input[placeholder="Type your name"], input[name="displayName"]';
+
         try {
             await page.waitForSelector(nameInputSelector, { timeout: 15000 });
 
-            // Clear input first just in case
+            // Focus and clear
             await page.click(nameInputSelector, { clickCount: 3 });
-            await page.type(nameInputSelector, botName);
+            await page.keyboard.press('Backspace');
+            await new Promise(r => setTimeout(r, 500));
+
+            // Type name explicitly
+            await page.type(nameInputSelector, botName, { delay: 50 });
             console.log(`[Bot] Name entered: ${botName}`);
         } catch (e) {
-            console.warn("[Bot] Name input not found.");
+            console.warn("[Bot] Name input not found. Assuming we might be logged in or anonymous join mismatch.");
         }
 
-        const joinNowSelector = 'button[data-tid="prejoin-join-button"], button.join-btn, button[aria-label="Join now"]';
-        await page.waitForSelector(joinNowSelector, { timeout: 10000 });
-        await page.click(joinNowSelector);
-        console.log("[Bot] Clicked Join Now.");
+        // 4. Click JOIN
+        try {
+            const joinNowSelectors = [
+                'button[data-tid="prejoin-join-button"]',
+                'button.join-btn',
+                'button[aria-label="Join now"]',
+                'button:has-text("Join now")' // utilizing pseudoselector if supported or generic fallback
+            ];
+
+            const joinSelector = joinNowSelectors.join(', ');
+            await page.waitForSelector(joinSelector, { timeout: 10000 });
+
+            // Double check it's clickable
+            await page.click(joinSelector);
+            console.log("[Bot] Clicked 'Join Now'. Waiting for roster...");
+        } catch (e) {
+            console.error("[Bot] 'Join Now' button not found!");
+            throw new Error("JOIN_BUTTON_NOT_FOUND");
+        }
 
         session.status = 'joined';
         await notifyMainApp(sessionId, 'joined', { meetingId: session.meetingId });
@@ -451,6 +513,9 @@ async function handleMeetingEnd(sessionId) {
                 const sttResult = await processAudioThroughSTT(sessionId, audioToProcess, session.speakerLog);
                 session.transcript = sttResult.transcript;
                 session.duration = sttResult.duration;
+                // NEW: Store audio path for future playback
+                session.audioPath = sttResult.audio_path;
+                console.log(`[Bot] STT Success. Audio stored at: ${session.audioPath}`);
             } else {
                 console.log("[Bot] No audio source found (real or sample). Simulating transcript.");
                 const realName = session.speakerLog?.[0]?.name || "Unknown Speaker";
