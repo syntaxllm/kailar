@@ -565,22 +565,19 @@ export default function SkaryaAI() {
                     return now >= new Date(start.getTime() - 10 * 60000) && now <= end;
                   });
 
-                  // --- DEMO MODE: Force a meeting if none exists (for User Review) ---
-                  if (!current) { // Always show demo if no real meeting found
+                  // --- LIVE TEST LINK (User Request) ---
+                  if (!current) {
                     current = {
-                      id: 'demo_meeting_123',
-                      subject: 'Project Sync (Demo)',
+                      id: 'live_test_meet',
+                      subject: 'Live Test Meeting (User Link)',
                       startLocal: new Date().toISOString(),
-                      endLocal: new Date(Date.now() + 30 * 60000).toISOString(),
-                      organizerName: 'Demo Organizer',
-                      attendees: [
-                        { name: 'Alice', email: 'alice@example.com' },
-                        { name: 'Bob', email: 'bob@example.com' }
-                      ],
-                      joinUrl: 'https://teams.microsoft.com/l/meetup-join/demo'
+                      endLocal: new Date(Date.now() + 60 * 60000).toISOString(),
+                      organizerName: 'User Preview',
+                      attendees: [],
+                      joinUrl: 'https://teams.microsoft.com/meet/41278206054034?p=rro0Cr23a8NUSGXfIX'
                     };
                   }
-                  // ------------------------------------------------------------------
+                  // -------------------------------------
 
                   if (!current) return null;
 
